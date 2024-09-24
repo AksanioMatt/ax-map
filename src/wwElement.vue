@@ -31,9 +31,7 @@ const DEFAULT_MARKER_HEIGHT_FIELD = 'height';
 
 export default {
     props: {
-        /* wwEditor:start */
         wwEditorState: { type: Object, required: true },
-        /* wwEditor:end */
         content: { type: Object, required: true },
         wwElementState: { type: Object, required: true },
     },
@@ -50,10 +48,7 @@ export default {
     },
     computed: {
         isEditing() {
-            /* wwEditor:start */
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
-            /* wwEditor:end */
-            return false;
         },
         isError() {
             if (this.content && this.content.googleKey) {
@@ -74,10 +69,9 @@ export default {
                     lng: parseFloat(this.content.lng || 0),
                 },
                 zoom: this.content.zoom,
-                styles:
-                    this.content.mapStyle === 'custom'
-                        ? JSON.parse(this.content.mapStyleJSON.code)
-                        : stylesConfig[this.content.mapStyle],
+                styles: this.content.mapStyle === 'custom'
+                    ? JSON.parse(this.content.mapStyleJSON.code)
+                    : stylesConfig[this.content.mapStyle],
                 mapTypeId: this.content.defaultMapType,
                 zoomControl: this.content.zoomControl,
                 scaleControl: this.content.scaleControl,
@@ -111,24 +105,23 @@ export default {
         },
     },
     watch: {
-        /* wwEditor:start */
         'content.googleKey'() {
             this.initMap();
         },
         'content.markersIcon'() {
-            this.initMap();
+            this.updateMapMarkers();
         },
         'content.markersAutoSize'() {
-            this.initMap();
+            this.updateMapMarkers();
         },
         'content.defaultMarkerUrl'() {
-            this.initMap();
+            this.updateMapMarkers();
         },
         'content.defaultMarkerWidth'() {
-            this.initMap();
+            this.updateMapMarkers();
         },
         'content.defaultMarkerHeight'() {
-            this.initMap();
+            this.updateMapMarkers();
         },
         'content.zoom'(value) {
             if (this.map) this.map.setZoom(value || 0);
@@ -142,7 +135,6 @@ export default {
         'wwEditorState.boundProps.markers'(isBind) {
             if (!isBind) this.$emit('update:content:effect', { nameField: null, latField: null, lngField: null });
         },
-        /* wwEditor:end */
         markers() {
             this.updateMapMarkers();
         },
@@ -282,7 +274,8 @@ export default {
                 }
             }
 
-            this.markerCluster.addMarkers(this.markerInstances); // Add markers to the clusterer
+            // Add markers to the clusterer
+            this.markerCluster.addMarkers(this.markerInstances);
         },
 
         async setMapMarkerBounds() {
@@ -299,9 +292,6 @@ export default {
     },
 };
 </script>
-
-
-
 
 <style lang="scss" scoped>
 .ww-map {
@@ -322,11 +312,6 @@ export default {
         height: 100%;
         top: 0;
         left: 0;
-
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-        }
 
         .map {
             z-index: 1;
