@@ -275,24 +275,17 @@ export default {
                     this.markerCluster.addMarker(_marker);
 
                     if (marker.content) {
-                        const briefInfoWindow = new google.maps.InfoWindow({
-                            content: `<div><strong>${marker.content}</strong></div>`, // Display brief info on hover
+                        const infowindow = new google.maps.InfoWindow({
+                            content: marker.content,
                             maxWidth: 200,
                         });
-
-                        const detailedInfoWindow = new google.maps.InfoWindow({
-                            content: `<div><strong>${marker.content}</strong><br/>Detailed Info: <br/> Lat: ${marker.position.lat}, Lng: ${marker.position.lng}</div>`, // More detailed info on click
-                            maxWidth: 300,
-                        });
-
-                        // Show tooltip on hover
                         _marker.addListener('mouseover', e => {
                             this.$emit('trigger-event', {
                                 name: 'marker:mouseover',
                                 event: { marker, domEvent: e.domEvent },
                             });
                             if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                                briefInfoWindow.open(this.map, _marker);
+                                infowindow.open(this.map, _marker);
                             }
                         });
                         _marker.addListener('mouseout', e => {
@@ -301,18 +294,16 @@ export default {
                                 event: { marker, domEvent: e.domEvent },
                             });
                             if (this.content.markerTooltipTrigger === 'hover') {
-                                briefInfoWindow.close();
+                                infowindow.close();
                             }
                         });
-
-                        // Show detailed info on click
                         _marker.addListener('click', e => {
                             this.$emit('trigger-event', {
                                 name: 'marker:click',
                                 event: { marker, domEvent: e.domEvent },
                             });
                             if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                                detailedInfoWindow.open(this.map, _marker);
+                                infowindow.open(this.map, _marker);
                             }
                         });
                     }
@@ -325,69 +316,105 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
-        
+
         setMapMarkerBounds() {
-            if (!this.map) return;
             const bounds = new google.maps.LatLngBounds();
-            this.markers.forEach(marker => bounds.extend(marker.position));
+            this.markerInstances.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
             this.map.fitBounds(bounds);
         },
     },
 };
 </script>
 
-<style scoped>
+
+<style lang="scss" scoped>
 .ww-map {
-    height: 100%;
-    width: 100%;
-}
-
-.map-container {
     position: relative;
-    height: 100%;
-    width: 100%;
-}
-
-.map {
-    height: 100%;
-    width: 100%;
-    background-color: #f0f0f0;
-}
-
-.map-placeholder {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-    background-color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    z-index: 10;
-    padding: 20px;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-}
+    overflow: hidden;
+    padding: 20%;
+    pointer-events: initial;
 
-.placeholder-content {
-    max-width: 600px;
-    font-size: 14px;
-}
+    &.inactive {
+        pointer-events: none;
+    }
 
-.placeholder-content button {
-    margin-top: 10px;
-    padding: 6px 12px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
+    .map-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
 
-.placeholder-content .wrongKey {
-    color: red;
-    margin-top: 10px;
-    display: block;
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map {
+            z-index: 1;
+            height: 100%;
+            width: 100%;
+
+            &.error {
+                filter: blur(8px);
+            }
+        }
+        .map-placeholder {
+            z-index: 2;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            &.error {
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+
+            .placeholder-content {
+                text-align: center;
+                width: 90%;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0.8em 1.2em;
+                border-radius: 12px;
+
+                .wrongKey {
+                    color: #f44336;
+                    padding: 10px;
+                }
+
+                button {
+                    margin-top: 20px;
+                    padding: 0.8em 1.2em;
+                    border: none;
+                    border-radius: 12px;
+                    background-color: #099af2;
+                    color: white;
+                    font-weight: 500;
+                    font-size: 1.1em;
+                    transition: 0.3s;
+
+                    &:hover {
+                        cursor: pointer;
+                        background-color: #077ac0;
+                        transition: 0.3s;
+                    }
+                }
+            }
+        }
+    }
 }
 </style>
