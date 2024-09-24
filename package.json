@@ -10,7 +10,7 @@
         "serve": "weweb serve"
     },
     "dependencies": {
-        "@googlemaps/markerclusterer": "^3.1.0"
+        "@googlemaps/markerclusterer": "^2.5.3"
     },
     "devDependencies": {
         "@vue/eslint-config-prettier": "^6.0.0",
