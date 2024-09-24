@@ -156,7 +156,7 @@ export default {
     mounted() {
         this.initMap();
 
-        // Fixed bound require the map to be visible
+        // Fixed bounds require the map to be visible
         this.observer = new IntersectionObserver(
             changes => {
                 if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
@@ -257,56 +257,18 @@ export default {
                                 : {
                                       url: defaultMarkerUrl,
                                       scaledSize:
-                                          !this.content.markersAutoSize &&
-                                          this.content.defaultMarkerWidth &&
-                                          this.content.defaultMarkerHeight
+                                          !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
                                               ? new google.maps.Size(
                                                     this.content.defaultMarkerWidth,
                                                     this.content.defaultMarkerHeight
                                                 )
                                               : undefined,
                                   }
-                            : {},
-                        animation: google.maps.Animation.DROP,
+                            : undefined,
                     });
 
-                    this.markerInstances.push(_marker);
-                    // Add the marker to the clusterer
-                    this.markerCluster.addMarker(_marker);
-
-                    if (marker.content) {
-                        const infowindow = new google.maps.InfoWindow({
-                            content: marker.content,
-                            maxWidth: 200,
-                        });
-                        _marker.addListener('mouseover', e => {
-                            this.$emit('trigger-event', {
-                                name: 'marker:mouseover',
-                                event: { marker, domEvent: e.domEvent },
-                            });
-                            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                                infowindow.open(this.map, _marker);
-                            }
-                        });
-                        _marker.addListener('mouseout', e => {
-                            this.$emit('trigger-event', {
-                                name: 'marker:mouseout',
-                                event: { marker, domEvent: e.domEvent },
-                            });
-                            if (this.content.markerTooltipTrigger === 'hover') {
-                                infowindow.close();
-                            }
-                        });
-                        _marker.addListener('click', e => {
-                            this.$emit('trigger-event', {
-                                name: 'marker:click',
-                                event: { marker, domEvent: e.domEvent },
-                            });
-                            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                                infowindow.open(this.map, _marker);
-                            }
-                        });
-                    }
+                    this.markerInstances.push(_marker); // Store marker instance
+                    this.markerCluster.addMarker(_marker); // Add marker to cluster
                 } catch (error) {
                     wwLib.wwLog.error(error);
                 }
@@ -320,7 +282,7 @@ export default {
         setMapMarkerBounds() {
             const bounds = new google.maps.LatLngBounds();
             this.markerInstances.forEach(marker => {
-                bounds.extend(marker.getPosition());
+                bounds.extend(marker.position);
             });
             this.map.fitBounds(bounds);
         },
@@ -328,93 +290,24 @@ export default {
 };
 </script>
 
-
-<style lang="scss" scoped>
-.ww-map {
-    position: relative;
+<style scoped>
+.map-container {
+    height: 100%;
+}
+.map {
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    padding: 20%;
-    pointer-events: initial;
-
-    &.inactive {
-        pointer-events: none;
-    }
-
-    .map-container {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-        }
-
-        .map {
-            z-index: 1;
-            height: 100%;
-            width: 100%;
-
-            &.error {
-                filter: blur(8px);
-            }
-        }
-        .map-placeholder {
-            z-index: 2;
-            position: absolute;
-            top: 0px;
-            left: 0px;
-
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            &.error {
-                background-color: rgba(0, 0, 0, 0.4);
-            }
-
-            .placeholder-content {
-                text-align: center;
-                width: 90%;
-                background: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 0.8em 1.2em;
-                border-radius: 12px;
-
-                .wrongKey {
-                    color: #f44336;
-                    padding: 10px;
-                }
-
-                button {
-                    margin-top: 20px;
-                    padding: 0.8em 1.2em;
-                    border: none;
-                    border-radius: 12px;
-                    background-color: #099af2;
-                    color: white;
-                    font-weight: 500;
-                    font-size: 1.1em;
-                    transition: 0.3s;
-
-                    &:hover {
-                        cursor: pointer;
-                        background-color: #077ac0;
-                        transition: 0.3s;
-                    }
-                }
-            }
-        }
-    }
+}
+.map-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.placeholder-content {
+    text-align: center;
+}
+.wrongKey {
+    color: red;
 }
 </style>
