@@ -156,7 +156,7 @@ export default {
     mounted() {
         this.initMap();
 
-        // Fixed bounds require the map to be visible
+        // Fixed bound require the map to be visible
         this.observer = new IntersectionObserver(
             changes => {
                 if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
@@ -257,18 +257,65 @@ export default {
                                 : {
                                       url: defaultMarkerUrl,
                                       scaledSize:
-                                          !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                          !this.content.markersAutoSize &&
+                                          this.content.defaultMarkerWidth &&
+                                          this.content.defaultMarkerHeight
                                               ? new google.maps.Size(
                                                     this.content.defaultMarkerWidth,
                                                     this.content.defaultMarkerHeight
                                                 )
                                               : undefined,
                                   }
-                            : undefined,
+                            : {},
+                        animation: google.maps.Animation.DROP,
                     });
 
-                    this.markerInstances.push(_marker); // Store marker instance
-                    this.markerCluster.addMarker(_marker); // Add marker to cluster
+                    this.markerInstances.push(_marker);
+                    // Add the marker to the clusterer
+                    this.markerCluster.addMarker(_marker);
+
+                    if (marker.content) {
+                        const briefInfoWindow = new google.maps.InfoWindow({
+                            content: `<div><strong>${marker.content}</strong></div>`, // Display brief info on hover
+                            maxWidth: 200,
+                        });
+
+                        const detailedInfoWindow = new google.maps.InfoWindow({
+                            content: `<div><strong>${marker.content}</strong><br/>Detailed Info: <br/> Lat: ${marker.position.lat}, Lng: ${marker.position.lng}</div>`, // More detailed info on click
+                            maxWidth: 300,
+                        });
+
+                        // Show tooltip on hover
+                        _marker.addListener('mouseover', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:mouseover',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                                briefInfoWindow.open(this.map, _marker);
+                            }
+                        });
+                        _marker.addListener('mouseout', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:mouseout',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'hover') {
+                                briefInfoWindow.close();
+                            }
+                        });
+
+                        // Show detailed info on click
+                        _marker.addListener('click', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:click',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
+                                detailedInfoWindow.open(this.map, _marker);
+                            }
+                        });
+                    }
                 } catch (error) {
                     wwLib.wwLog.error(error);
                 }
@@ -278,12 +325,11 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
-
+        
         setMapMarkerBounds() {
+            if (!this.map) return;
             const bounds = new google.maps.LatLngBounds();
-            this.markerInstances.forEach(marker => {
-                bounds.extend(marker.position);
-            });
+            this.markers.forEach(marker => bounds.extend(marker.position));
             this.map.fitBounds(bounds);
         },
     },
@@ -291,23 +337,57 @@ export default {
 </script>
 
 <style scoped>
-.map-container {
+.ww-map {
     height: 100%;
+    width: 100%;
 }
+
+.map-container {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
 .map {
+    height: 100%;
+    width: 100%;
+    background-color: #f0f0f0;
+}
+
+.map-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-}
-.map-placeholder {
+    background-color: white;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
-}
-.placeholder-content {
     text-align: center;
+    z-index: 10;
+    padding: 20px;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
-.wrongKey {
+
+.placeholder-content {
+    max-width: 600px;
+    font-size: 14px;
+}
+
+.placeholder-content button {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.placeholder-content .wrongKey {
     color: red;
+    margin-top: 10px;
+    display: block;
 }
 </style>
