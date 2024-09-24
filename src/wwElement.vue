@@ -5,7 +5,7 @@
                 <div class="placeholder-content">
                     If you want to use a Google map, you need to have a Google API Key. If you already have one, you can
                     add it in the map settings. <br /><br />
-                    Otherwise you can follow these instructions:
+                    Otherwise you can follow theses instructions:
                     <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                         <button>API Key documentation</button>
                     </a>
@@ -17,9 +17,9 @@
     </div>
 </template>
 
+
 <script>
 import { Loader } from './googleLoader';
-import { MarkerClusterer } from '@googlemaps/markerclusterer'; // Import the MarkerClusterer
 import stylesConfig from './stylesConfig.json';
 
 const DEFAULT_MARKER_NAME_FIELD = 'name';
@@ -48,7 +48,6 @@ export default {
             loader: null,
             wrongKey: false,
             observer: null,
-            markerCluster: null, // Initialize markerCluster
         };
     },
     computed: {
@@ -56,6 +55,7 @@ export default {
             /* wwEditor:start */
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
             /* wwEditor:end */
+            // eslint-disable-next-line no-unreachable
             return false;
         },
         isError() {
@@ -122,6 +122,9 @@ export default {
             this.initMap();
         },
         'content.markersAutoSize'() {
+            this.initMap();
+        },
+        'content.defaultMarkerUrl'() {
             this.initMap();
         },
         'content.defaultMarkerUrl'() {
@@ -210,14 +213,11 @@ export default {
         async updateMapMarkers() {
             if (!this.markers || !this.loader) return;
 
-            // Clear existing markers and the marker cluster
-            if (this.markerCluster) {
-                this.markerCluster.clearMarkers();
+            for (const markerInstance of this.markerInstances) {
+                markerInstance.setMap(null);
             }
-            this.markerInstances = [];
 
-            // Create new markers
-            const markersToAdd = [];
+            this.markerInstances = [];
 
             for (const marker of this.markers) {
                 try {
@@ -260,48 +260,157 @@ export default {
                                                 )
                                               : undefined,
                                   }
-                            : undefined,
-                    });
-                    _marker.addListener('click', () => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: {
-                                marker: marker.rawData,
-                            },
-                        });
+                            : {},
+                        animation: google.maps.Animation.DROP,
                     });
 
-                    markersToAdd.push(_marker);
-                    this.markerInstances.push(_marker); // Store the marker instance
+                    this.markerInstances.push(_marker);
+                    if (marker.content) {
+                        const infowindow = new google.maps.InfoWindow({
+                            content: marker.content,
+                            maxWidth: 200,
+                        });
+                        _marker.addListener('mouseover', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:mouseover',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                                infowindow.open(this.map, _marker);
+                            }
+                        });
+                        _marker.addListener('mouseout', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:mouseout',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'hover') {
+                                infowindow.close();
+                            }
+                        });
+                        _marker.addListener('click', e => {
+                            this.$emit('trigger-event', {
+                                name: 'marker:click',
+                                event: { marker, domEvent: e.domEvent },
+                            });
+                            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
+                                infowindow.open(this.map, _marker);
+                            }
+                        });
+                    }
                 } catch (error) {
                     wwLib.wwLog.error(error);
                 }
             }
 
-            // Add markers to the cluster
-            this.markerCluster = new MarkerClusterer(this.map, markersToAdd, {
-                imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m',
-            });
+            if (this.content.fixedBounds) {
+                this.setMapMarkerBounds();
+            }
         },
         setMapMarkerBounds() {
-            if (!this.map || !this.markers) return;
-
-            const bounds = new google.maps.LatLngBounds();
-            this.markers.forEach(marker => {
-                bounds.extend(marker.position);
-            });
-            this.map.fitBounds(bounds);
+            if (!this.map || this.markers.length < 2) return;
+            const mapBounds = new google.maps.LatLngBounds();
+            for (const marker of this.markers) {
+                mapBounds.extend(marker.position);
+            }
+            this.map.fitBounds(mapBounds);
         },
+        /* wwEditor:start */
+        getMarkerTestEvent() {
+            if (!this.markers.length) throw new Error('No markers found');
+            return { marker: this.markers[0], domEvent: { x: 128, y: 156, target: null } };
+        },
+        /* wwEditor:end */
     },
 };
 </script>
 
-<style scoped>
-.map-container {
+<style lang="scss" scoped>
+.ww-map {
     position: relative;
-}
-.map {
     width: 100%;
     height: 100%;
+    overflow: hidden;
+    padding: 20%;
+    pointer-events: initial;
+
+    &.inactive {
+        pointer-events: none;
+    }
+
+    .map-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map {
+            z-index: 1;
+            height: 100%;
+            width: 100%;
+
+            &.error {
+                filter: blur(8px);
+            }
+        }
+        .map-placeholder {
+            z-index: 2;
+            position: absolute;
+            top: 0px;
+            left: 0px;
+
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            &.error {
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+
+            .placeholder-content {
+                text-align: center;
+                width: 90%;
+                background: white;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0.8em 1.2em;
+                border-radius: 12px;
+
+                .wrongKey {
+                    color: #f44336;
+                    padding: 10px;
+                }
+
+                button {
+                    margin-top: 20px;
+                    padding: 0.8em 1.2em;
+                    border: none;
+                    border-radius: 12px;
+                    background-color: #099af2;
+                    color: white;
+                    font-weight: 500;
+                    font-size: 1.1em;
+                    transition: 0.3s;
+
+                    &:hover {
+                        cursor: pointer;
+                        background-color: #077ac0;
+                        transition: 0.3s;
+                    }
+                }
+            }
+        }
+    }
 }
 </style>
