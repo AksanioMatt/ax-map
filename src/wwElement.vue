@@ -186,7 +186,7 @@ export default {
                         event: { lat: mapsMouseEvent.latLng.lat(), lng: mapsMouseEvent.latLng.lng() },
                     });
                 });
-                this.updateMapMarkers(); // Call to update markers after map initialization
+                await this.updateMapMarkers(); // Ensure markers are updated after map initialization
             } catch (error) {
                 wwLib.wwLog.error(error);
             }
@@ -206,52 +206,63 @@ export default {
                 });
             }
 
-            // Create and add markers
-            this.markerInstances = this.markers.map(marker => {
-                const url =
-                    marker.url && marker.url.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                        : marker.url;
-                const defaultMarkerUrl =
-                    this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                        : this.content.defaultMarkerUrl;
-
-                const _marker = new google.maps.Marker({
-                    position: marker.position,
-                    map: this.map,
-                    icon: this.content.markersIcon
-                        ? url
-                            ? {
-                                url,
-                                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                    ? new google.maps.Size(marker.width, marker.height)
-                                    : undefined,
-                              }
-                            : {
-                                url: defaultMarkerUrl,
-                                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                    : undefined,
-                              }
-                        : undefined,
-                });
-
-                // Create an info window for the marker
-                const infoWindow = new google.maps.InfoWindow({
-                    content: marker.content,
-                });
-
-                // Add click event for the marker
-                _marker.addListener('click', () => {
-                    infoWindow.open(this.map, _marker);
-                });
-
-                return _marker; // Return the marker instance
-            });
+            // Create promises for marker creation
+            const markerPromises = this.markers.map(marker => this.createMarker(marker));
+            // Wait for all marker creation promises to resolve
+            this.markerInstances = await Promise.all(markerPromises);
 
             // Add markers to the clusterer
             this.markerCluster.addMarkers(this.markerInstances);
+        },
+
+        createMarker(marker) {
+            return new Promise((resolve, reject) => {
+                try {
+                    const url =
+                        marker.url && marker.url.startsWith('designs/')
+                            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                            : marker.url;
+                    const defaultMarkerUrl =
+                        this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                            : this.content.defaultMarkerUrl;
+
+                    const _marker = new google.maps.Marker({
+                        position: marker.position,
+                        map: this.map,
+                        icon: this.content.markersIcon
+                            ? url
+                                ? {
+                                    url,
+                                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                        ? new google.maps.Size(marker.width, marker.height)
+                                        : undefined,
+                                }
+                                : {
+                                    url: defaultMarkerUrl,
+                                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                        : undefined,
+                                }
+                            : undefined,
+                    });
+
+                    // Create an info window for the marker
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: marker.content,
+                    });
+
+                    // Add click event for the marker
+                    _marker.addListener('click', () => {
+                        infoWindow.open(this.map, _marker);
+                    });
+
+                    resolve(_marker); // Resolve the promise with the marker instance
+                } catch (error) {
+                    console.error("Error creating marker:", error);
+                    reject(error); // Reject the promise on error
+                }
+            });
         },
 
         async setMapMarkerBounds() {
@@ -268,6 +279,7 @@ export default {
     },
 };
 </script>
+
 
 
 <style lang="scss" scoped>
