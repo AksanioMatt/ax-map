@@ -102,6 +102,9 @@ export default {
         'content.googleKey'() {
             this.initMap();
         },
+        'content.markers'() { // Watch for changes to markers
+            this.updateMapMarkers();
+        },
         'content.markersIcon'() {
             this.updateMapMarkers();
         },
@@ -178,14 +181,12 @@ export default {
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
                 this.map.addListener('click', mapsMouseEvent => {
-                    mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
-                    mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
                     this.$emit('trigger-event', {
                         name: 'map:click',
-                        event: { ...mapsMouseEvent },
+                        event: { lat: mapsMouseEvent.latLng.lat(), lng: mapsMouseEvent.latLng.lng() },
                     });
                 });
-                this.updateMapMarkers();
+                this.updateMapMarkers(); // Call to update markers after map initialization
             } catch (error) {
                 wwLib.wwLog.error(error);
             }
@@ -198,75 +199,56 @@ export default {
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
 
-            // Clear existing marker cluster
-            if (this.markerCluster) {
-                this.markerCluster.clearMarkers();
-            } else {
+            // Initialize MarkerClusterer if not already initialized
+            if (!this.markerCluster) {
                 this.markerCluster = new MarkerClusterer(this.map, [], {
                     imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m' // Marker Cluster images path
                 });
             }
 
-            for (const marker of this.markers) {
-                try {
-                    const url =
-                        marker.url && marker.url.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                            : marker.url;
-                    const defaultMarkerUrl =
-                        this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                            : this.content.defaultMarkerUrl;
+            // Create and add markers
+            this.markerInstances = this.markers.map(marker => {
+                const url =
+                    marker.url && marker.url.startsWith('designs/')
+                        ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                        : marker.url;
+                const defaultMarkerUrl =
+                    this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                        ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                        : this.content.defaultMarkerUrl;
 
-                    const _marker = new google.maps.Marker({
-                        position: marker.position,
-                        map: this.map,
-                        icon: this.content.markersIcon
-                            ? url
-                                ? {
-                                      url,
-                                      scaledSize:
-                                          !this.content.markersAutoSize && marker.width && marker.height
-                                              ? new google.maps.Size(marker.width, marker.height)
-                                              : !this.content.markersAutoSize &&
-                                                this.content.defaultMarkerWidth &&
-                                                this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
-                                : {
-                                      url: defaultMarkerUrl,
-                                      scaledSize:
-                                          !this.content.markersAutoSize &&
-                                          this.content.defaultMarkerWidth &&
-                                          this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
-                            : undefined,
-                    });
+                const _marker = new google.maps.Marker({
+                    position: marker.position,
+                    map: this.map,
+                    icon: this.content.markersIcon
+                        ? url
+                            ? {
+                                url,
+                                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                    ? new google.maps.Size(marker.width, marker.height)
+                                    : undefined,
+                              }
+                            : {
+                                url: defaultMarkerUrl,
+                                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                    : undefined,
+                              }
+                        : undefined,
+                });
 
-                    // Create an info window
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: marker.content,
-                    });
+                // Create an info window for the marker
+                const infoWindow = new google.maps.InfoWindow({
+                    content: marker.content,
+                });
 
-                    // Add a click event listener for the marker
-                    google.maps.event.addListener(_marker, 'click', () => {
-                        infoWindow.open(this.map, _marker);
-                    });
+                // Add click event for the marker
+                _marker.addListener('click', () => {
+                    infoWindow.open(this.map, _marker);
+                });
 
-                    this.markerInstances.push(_marker); // Store the marker instance
-                } catch (error) {
-                    console.error("Error creating marker:", error);
-                }
-            }
+                return _marker; // Return the marker instance
+            });
 
             // Add markers to the clusterer
             this.markerCluster.addMarkers(this.markerInstances);
