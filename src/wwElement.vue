@@ -51,16 +51,10 @@ export default {
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
         },
         isError() {
-            if (this.content && this.content.googleKey) {
-                return !this.isGoogleKeyMatch;
-            }
-            return true;
+            return this.content && this.content.googleKey ? !this.isGoogleKeyMatch : true;
         },
         isGoogleKeyMatch() {
-            if (this.content.googleKey) {
-                return this.content.googleKey.match(/^(AIza[0-9A-Za-z-_]{35})$/);
-            }
-            return false;
+            return this.content.googleKey ? this.content.googleKey.match(/^(AIza[0-9A-Za-z-_]{35})$/) : false;
         },
         mapOptions() {
             return {
@@ -204,9 +198,9 @@ export default {
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
 
-            // Initialize a new marker clusterer
+            // Clear existing marker cluster
             if (this.markerCluster) {
-                this.markerCluster.clearMarkers(); // Clear previous markers
+                this.markerCluster.clearMarkers();
             } else {
                 this.markerCluster = new MarkerClusterer(this.map, [], {
                     imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m' // Marker Cluster images path
@@ -224,7 +218,7 @@ export default {
                             ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                             : this.content.defaultMarkerUrl;
 
-                    let _marker = new google.maps.Marker({
+                    const _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
                         icon: this.content.markersIcon
@@ -292,6 +286,7 @@ export default {
     },
 };
 </script>
+
 
 <style lang="scss" scoped>
 .ww-map {
