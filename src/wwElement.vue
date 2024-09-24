@@ -5,7 +5,7 @@
                 <div class="placeholder-content">
                     If you want to use a Google map, you need to have a Google API Key. If you already have one, you can
                     add it in the map settings. <br /><br />
-                    Otherwise you can follow theses instructions:
+                    Otherwise, you can follow these instructions:
                     <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                         <button>API Key documentation</button>
                     </a>
@@ -17,9 +17,9 @@
     </div>
 </template>
 
-
 <script>
 import { Loader } from './googleLoader';
+import { MarkerClusterer } from '@googlemaps/markerclusterer'; // Import MarkerClusterer
 import stylesConfig from './stylesConfig.json';
 
 const DEFAULT_MARKER_NAME_FIELD = 'name';
@@ -48,6 +48,7 @@ export default {
             loader: null,
             wrongKey: false,
             observer: null,
+            markerCluster: null, // Initialize markerCluster
         };
     },
     computed: {
@@ -55,7 +56,6 @@ export default {
             /* wwEditor:start */
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
             /* wwEditor:end */
-            // eslint-disable-next-line no-unreachable
             return false;
         },
         isError() {
@@ -122,9 +122,6 @@ export default {
             this.initMap();
         },
         'content.markersAutoSize'() {
-            this.initMap();
-        },
-        'content.defaultMarkerUrl'() {
             this.initMap();
         },
         'content.defaultMarkerUrl'() {
@@ -210,14 +207,22 @@ export default {
                 wwLib.wwLog.error(error);
             }
         },
+        
         async updateMapMarkers() {
             if (!this.markers || !this.loader) return;
 
-            for (const markerInstance of this.markerInstances) {
-                markerInstance.setMap(null);
-            }
-
+            // Clear existing marker instances
+            this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
+
+            // Initialize a new marker clusterer
+            if (this.markerCluster) {
+                this.markerCluster.clearMarkers(); // Clear previous markers
+            } else {
+                this.markerCluster = new MarkerClusterer(this.map, [], {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m' // Marker Cluster images path
+                });
+            }
 
             for (const marker of this.markers) {
                 try {
@@ -229,6 +234,7 @@ export default {
                         this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
                             ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                             : this.content.defaultMarkerUrl;
+
                     let _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
@@ -265,6 +271,9 @@ export default {
                     });
 
                     this.markerInstances.push(_marker);
+                    // Add the marker to the clusterer
+                    this.markerCluster.addMarker(_marker);
+
                     if (marker.content) {
                         const infowindow = new google.maps.InfoWindow({
                             content: marker.content,
@@ -307,23 +316,18 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
+
         setMapMarkerBounds() {
-            if (!this.map || this.markers.length < 2) return;
-            const mapBounds = new google.maps.LatLngBounds();
-            for (const marker of this.markers) {
-                mapBounds.extend(marker.position);
-            }
-            this.map.fitBounds(mapBounds);
+            const bounds = new google.maps.LatLngBounds();
+            this.markerInstances.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
+            this.map.fitBounds(bounds);
         },
-        /* wwEditor:start */
-        getMarkerTestEvent() {
-            if (!this.markers.length) throw new Error('No markers found');
-            return { marker: this.markers[0], domEvent: { x: 128, y: 156, target: null } };
-        },
-        /* wwEditor:end */
     },
 };
 </script>
+
 
 <style lang="scss" scoped>
 .ww-map {
