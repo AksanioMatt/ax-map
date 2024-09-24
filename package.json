@@ -9,7 +9,9 @@
         "build": "weweb build",
         "serve": "weweb serve"
     },
-    "dependencies": {},
+    "dependencies": {
+        "@googlemaps/markerclusterer": "^3.1.0"
+    },
     "devDependencies": {
         "@vue/eslint-config-prettier": "^6.0.0",
         "@weweb/cli": "latest",

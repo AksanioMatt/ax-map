@@ -5,7 +5,7 @@
                 <div class="placeholder-content">
                     If you want to use a Google map, you need to have a Google API Key. If you already have one, you can
                     add it in the map settings. <br /><br />
-                    Otherwise you can follow theses instructions:
+                    Otherwise you can follow these instructions:
                     <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                         <button>API Key documentation</button>
                     </a>
@@ -20,6 +20,7 @@
 <script>
 import { Loader } from './googleLoader';
 import stylesConfig from './stylesConfig.json';
+import { MarkerClusterer } from '@googlemaps/markerclusterer'; // Import MarkerClusterer
 
 const DEFAULT_MARKER_NAME_FIELD = 'name';
 const DEFAULT_MARKER_LAT_FIELD = 'lat';
@@ -47,6 +48,7 @@ export default {
             loader: null,
             wrongKey: false,
             observer: null,
+            markerCluster: null, // Added marker cluster variable
         };
     },
     computed: {
@@ -54,7 +56,6 @@ export default {
             /* wwEditor:start */
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
             /* wwEditor:end */
-            // eslint-disable-next-line no-unreachable
             return false;
         },
         isError() {
@@ -113,7 +114,6 @@ export default {
         },
     },
     watch: {
-        /* wwEditor:start */
         'content.googleKey'() {
             this.initMap();
         },
@@ -121,9 +121,6 @@ export default {
             this.initMap();
         },
         'content.markersAutoSize'() {
-            this.initMap();
-        },
-        'content.defaultMarkerUrl'() {
             this.initMap();
         },
         'content.defaultMarkerUrl'() {
@@ -147,7 +144,6 @@ export default {
         'wwEditorState.boundProps.markers'(isBind) {
             if (!isBind) this.$emit('update:content:effect', { nameField: null, latField: null, lngField: null });
         },
-        /* wwEditor:end */
         markers() {
             this.updateMapMarkers();
         },
@@ -158,7 +154,6 @@ export default {
     mounted() {
         this.initMap();
 
-        // Fixed bound require the map to be visible
         this.observer = new IntersectionObserver(
             changes => {
                 if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
@@ -196,6 +191,10 @@ export default {
 
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
+                this.markerCluster = new MarkerClusterer(this.map, [], {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m', // Adjust this path if needed
+                });
+
                 this.map.addListener('click', mapsMouseEvent => {
                     mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
                     mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
@@ -212,8 +211,9 @@ export default {
         async updateMapMarkers() {
             if (!this.markers || !this.loader) return;
 
-            for (const markerInstance of this.markerInstances) {
-                markerInstance.setMap(null);
+            // Clear previous markers
+            if (this.markerCluster) {
+                this.markerCluster.clearMarkers();
             }
 
             this.markerInstances = [];
@@ -228,7 +228,7 @@ export default {
                         this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
                             ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                             : this.content.defaultMarkerUrl;
-                    let _marker = new google.maps.Marker({
+                    const _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
                         icon: this.content.markersIcon
@@ -264,11 +264,13 @@ export default {
                     });
 
                     this.markerInstances.push(_marker);
+
                     if (marker.content) {
                         const infowindow = new google.maps.InfoWindow({
                             content: marker.content,
                             maxWidth: 200,
                         });
+
                         _marker.addListener('mouseover', e => {
                             this.$emit('trigger-event', {
                                 name: 'marker:mouseover',
@@ -298,8 +300,13 @@ export default {
                         });
                     }
                 } catch (error) {
-                    wwLib.wwLog.error(error);
+                    console.error(error);
                 }
+            }
+
+            // Add all markers to the clusterer
+            if (this.markerCluster) {
+                this.markerCluster.addMarkers(this.markerInstances);
             }
 
             if (this.content.fixedBounds) {
@@ -307,19 +314,12 @@ export default {
             }
         },
         setMapMarkerBounds() {
-            if (!this.map || this.markers.length < 2) return;
-            const mapBounds = new google.maps.LatLngBounds();
-            for (const marker of this.markers) {
-                mapBounds.extend(marker.position);
-            }
-            this.map.fitBounds(mapBounds);
+            const bounds = new google.maps.LatLngBounds();
+            this.markerInstances.forEach(marker => {
+                bounds.extend(marker.getPosition());
+            });
+            this.map.fitBounds(bounds);
         },
-        /* wwEditor:start */
-        getMarkerTestEvent() {
-            if (!this.markers.length) throw new Error('No markers found');
-            return { marker: this.markers[0], domEvent: { x: 128, y: 156, target: null } };
-        },
-        /* wwEditor:end */
     },
 };
 </script>
@@ -329,87 +329,28 @@ export default {
     position: relative;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    padding: 20%;
-    pointer-events: initial;
-
-    &.inactive {
-        pointer-events: none;
-    }
-
     .map-container {
-        position: absolute;
         width: 100%;
         height: 100%;
-        top: 0;
-        left: 0;
-
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-        }
-
         .map {
-            z-index: 1;
-            height: 100%;
             width: 100%;
-
-            &.error {
-                filter: blur(8px);
-            }
-        }
-        .map-placeholder {
-            z-index: 2;
-            position: absolute;
-            top: 0px;
-            left: 0px;
-
             height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            &.error {
-                background-color: rgba(0, 0, 0, 0.4);
-            }
-
-            .placeholder-content {
-                text-align: center;
-                width: 90%;
-                background: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 0.8em 1.2em;
-                border-radius: 12px;
-
-                .wrongKey {
-                    color: #f44336;
-                    padding: 10px;
-                }
-
-                button {
-                    margin-top: 20px;
-                    padding: 0.8em 1.2em;
-                    border: none;
-                    border-radius: 12px;
-                    background-color: #099af2;
-                    color: white;
-                    font-weight: 500;
-                    font-size: 1.1em;
-                    transition: 0.3s;
-
-                    &:hover {
-                        cursor: pointer;
-                        background-color: #077ac0;
-                        transition: 0.3s;
-                    }
-                }
-            }
         }
+    }
+    .map-placeholder {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        color: #666;
+        font-size: 1.2em;
+        &.error {
+            color: red;
+        }
+    }
+    .wrongKey {
+        color: red;
+        margin-top: 10px;
     }
 }
 </style>
