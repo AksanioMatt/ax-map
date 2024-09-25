@@ -199,13 +199,7 @@ export default {
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
 
-            // Initialize MarkerClusterer if not already initialized
-            if (!this.markerCluster) {
-                this.markerCluster = new MarkerClusterer(this.map, [], {
-                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m' // Marker Cluster images path
-                });
-            }
-
+          
             // Create promises for marker creation
             const markerPromises = this.markers.map(marker => this.createMarker(marker));
             // Wait for all marker creation promises to resolve
@@ -213,6 +207,13 @@ export default {
 
             // Add markers to the clusterer
             this.markerCluster.addMarkers(this.markerInstances);
+              // Initialize MarkerClusterer if not already initialized
+              if (!this.markerCluster) {
+                this.markerCluster = new MarkerClusterer(this.map, this.markers, {
+                    imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m' // Marker Cluster images path
+                });
+            }
+
         },
 
         createMarker(marker) {
