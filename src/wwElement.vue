@@ -1,9 +1,3 @@
-To integrate the Google Maps marker clustering functionality into your existing Vue.js component, you can follow the
-structure of your provided code while ensuring that you maintain all of the existing functionality. Here's how to do it:
-
-### Updated Component Code
-
-```vue
 <template>
     <div class="ww-map" :class="{ inactive: isEditing && !isError }">
         <div class="map-container">
@@ -140,7 +134,10 @@ export default {
             this.initMap();
         },
         'content.zoom'(value) {
-            if (this.map) this.map.setZoom(value || 0);
+            if (this.map) {
+                this.map.setZoom(value || 0);
+                this.updateMarkerVisibility();
+            }
         },
         'content.defaultMapType'(value) {
             if (value === 'satellite') this.$emit('update:content:effect', { mapStyle: null });
@@ -162,7 +159,7 @@ export default {
     mounted() {
         this.initMap();
 
-        // Fixed bounds require the map to be visible
+        // Fixed bound require the map to be visible
         this.observer = new IntersectionObserver(
             changes => {
                 if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
@@ -209,6 +206,7 @@ export default {
                     });
                 });
                 this.updateMapMarkers();
+                this.updateMarkerVisibility();
             } catch (error) {
                 wwLib.wwLog.error(error);
             }
@@ -216,60 +214,58 @@ export default {
         async updateMapMarkers() {
             if (!this.markers || !this.loader) return;
 
-            // Clear existing markers from the clusterer
-            if (this.clusterer) {
-                this.clusterer.clearMarkers();
+            for (const markerInstance of this.markerInstances) {
+                markerInstance.setMap(null);
             }
 
             this.markerInstances = [];
 
             const markersArray = this.markers.map(marker => {
-                const url =
-                    marker.url && marker.url.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                        : marker.url;
-                const defaultMarkerUrl =
-                    this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                        : this.content.defaultMarkerUrl;
-
-                const _marker = new google.maps.Marker({
-                    position: marker.position,
-                    map: this.map,
-                    icon: this.content.markersIcon
-                        ? url
-                            ? {
-                                url,
-                                scaledSize:
-                                    !this.content.markersAutoSize && marker.width && marker.height
-                                        ? new google.maps.Size(marker.width, marker.height)
-                                        : !this.content.markersAutoSize &&
-                                            this.content.defaultMarkerWidth &&
-                                            this.content.defaultMarkerHeight
-                                            ? new google.maps.Size(
-                                                this.content.defaultMarkerWidth,
+                try {
+                    const url =
+                        marker.url && marker.url.startsWith('designs/')
+                            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                            : marker.url;
+                    const defaultMarkerUrl =
+                        this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                            : this.content.defaultMarkerUrl;
+                    let _marker = new google.maps.Marker({
+                        position: marker.position,
+                        map: this.map,
+                        icon: this.content.markersIcon
+                            ? url
+                                ? {
+                                      url,
+                                      scaledSize:
+                                          !this.content.markersAutoSize && marker.width && marker.height
+                                              ? new google.maps.Size(marker.width, marker.height)
+                                              : !this.content.markersAutoSize &&
+                                                this.content.defaultMarkerWidth &&
                                                 this.content.defaultMarkerHeight
-                                            )
-                                            : undefined,
-                            }
-                            : {
-                                url: defaultMarkerUrl,
-                                scaledSize:
-                                    !this.content.markersAutoSize &&
-                                        this.content.defaultMarkerWidth &&
-                                        this.content.defaultMarkerHeight
-                                        ? new google.maps.Size(
-                                            this.content.defaultMarkerWidth,
-                                            this.content.defaultMarkerHeight
-                                        )
-                                        : undefined,
-                            }
-                        : {},
-                    animation: google.maps.Animation.DROP,
-                });
+                                              ? new google.maps.Size(
+                                                    this.content.defaultMarkerWidth,
+                                                    this.content.defaultMarkerHeight
+                                                )
+                                              : undefined,
+                                  }
+                                : {
+                                      url: defaultMarkerUrl,
+                                      scaledSize:
+                                          !this.content.markersAutoSize &&
+                                          this.content.defaultMarkerWidth &&
+                                          this.content.defaultMarkerHeight
+                                              ? new google.maps.Size(
+                                                    this.content.defaultMarkerWidth,
+                                                    this.content.defaultMarkerHeight
+                                                )
+                                              : undefined,
+                                  }
+                            : {},
+                        animation: google.maps.Animation.DROP,
+                    });
 
-                this.markerInstances.push(_marker);
-                if (marker.content) {
+                    this.markerInstances.push(_marker);
                     const infowindow = new google.maps.InfoWindow({
                         content: marker.content,
                         maxWidth: 200,
@@ -302,16 +298,31 @@ export default {
                         }
                     });
                     return _marker;
+                } catch (error) {
+                    console.error(error);
                 }
-                })
-            
+            });
+
             // Initialize MarkerClusterer with the markers
-            this.clusterer = new MarkerClusterer({ map: this.map, markers: markersArray });
-            
+            this.clusterer = new MarkerClusterer({
+                map: this.map,
+                markers: markersArray,
+                options: {
+                    minimumClusterSize: 2, // Minimum markers to show clustering
+                },
+            });
+
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
-        
+        },
+        updateMarkerVisibility() {
+            const zoomLevel = this.map.getZoom();
+            const showMarkers = zoomLevel >= 15; // Change this value as needed
+
+            for (const marker of this.markerInstances) {
+                marker.setMap(showMarkers ? this.map : null);
+            }
         },
         setMapMarkerBounds() {
             if (!this.map || this.markers.length < 2) return;
@@ -365,7 +376,6 @@ export default {
                 filter: blur(8px);
             }
         }
-
         .map-placeholder {
             z-index: 2;
             position: absolute;
