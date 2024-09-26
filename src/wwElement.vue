@@ -287,34 +287,36 @@ export default {
                             event: { marker, domEvent: e.domEvent },
                         });
 
-                        // Retrieve the selected fields and marker data
-                        const selectedFields = this.infoWindowFields; // Check selected fields
-                        const markerData = marker.rawData; // Access marker data
+                        // Retrieve selected fields and marker data
+                        const selectedFields = this.infoWindowFields || []; // Ensure it's an array
+                        const markerData = marker.rawData || {}; // Ensure it's an object
 
                         // Debugging logs
                         console.log('Selected Fields:', selectedFields);
                         console.log('Marker Data:', markerData);
 
                         // Construct InfoWindow content
-                        const infoContent = `
-                                <div class="info-window-content">
-                                    <h3>${markerData.name || 'Unknown'}</h3>
-                                    ${selectedFields.map(field => {
-                                                    const value = markerData[field] || 'N/A';
-                                                    console.log(`Field: ${field}, Value: ${value}`); // Log each field and its value
-                                                    return `
-                                            <p><strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}</p>
-                                        `;
-                                                }).join('')}
-                                </div>
-                            `;
+                        const infoContent = document.createElement('div'); // Create a div for content
+                        const header = document.createElement('h3');
+                        header.textContent = markerData.name || 'Unknown'; // Set marker name
+                        infoContent.appendChild(header); // Append header to content
 
-                        // Set the content and open the InfoWindow
-                        infowindow.setContent(infoContent);
-                        infowindow.open(this.map, _marker);
+                        // Iterate through selected fields to populate content
+                        selectedFields.forEach(field => {
+                            const value = markerData[field] !== undefined ? markerData[field] : 'N/A';
+                            const paragraph = document.createElement('p');
+                            paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
+                            infoContent.appendChild(paragraph); // Append each field to content
+                        });
+
+                        // Update the InfoWindow safely
+                        try {
+                            infowindow.setContent(infoContent); // Update content
+                            infowindow.open(this.map, _marker); // Open the InfoWindow
+                        } catch (error) {
+                            console.error('Error setting InfoWindow content:', error);
+                        }
                     });
-
-
 
 
                     return _marker;

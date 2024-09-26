@@ -477,16 +477,18 @@ export default {
                     options: content => {
                         // Validate the content and markers
                         if (!content || !Array.isArray(content.markers) || content.markers.length === 0 || typeof content.markers[0] !== 'object') {
-                            return null; // Return null if markers are not valid
+                            return []; // Return an empty array if markers are not valid
                         }
         
-                        // Get all field names from the first marker and filter out invalid attribute names
-                        const markerFields = Object.keys(content.markers[0]).filter(key => isNaN(key));
+                        // Get all field names from the first marker, ensuring valid attribute names
+                        const markerFields = Object.keys(content.markers[0]).filter(key => {
+                            return typeof key === 'string' && isNaN(key); // Filter out numeric keys
+                        });
         
                         // Map field names to options with labels
                         return markerFields.map(field => ({
                             value: field,
-                            label: field.charAt(0).toUpperCase() + field.slice(1),
+                            label: field.charAt(0).toUpperCase() + field.slice(1), // Capitalize first letter for label
                         }));
                     },
                     label: {
@@ -495,9 +497,10 @@ export default {
                     },
                 },
             },
-            defaultValue: [], // Default selected field
+            defaultValue: [], 
             section: 'settings',
         },
+        
         
       
         zoomControl: {
