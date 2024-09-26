@@ -158,9 +158,6 @@ export default {
     },
     mounted() {
         this.initMap();
-        google.maps.event.addListener(this.map, 'zoom_changed', () => {
-            this.updateMarkerVisibility();
-        });
 
         // Fixed bound require the map to be visible
         this.observer = new IntersectionObserver(
@@ -217,7 +214,7 @@ export default {
         async updateMapMarkers() {
     if (!this.markers || !this.loader) return;
 
-    // Clear existing markers from the map and markerInstances
+    // Clear existing markers from the map
     this.markerInstances.forEach(markerInstance => {
         markerInstance.setMap(null); // Remove from the map
     });
@@ -228,9 +225,11 @@ export default {
         this.clusterer = new MarkerClusterer(this.map, [], {
             minimumClusterSize: 2,
         });
+    } else {
+        this.clusterer.clearMarkers(); // Clear previous markers from the clusterer
     }
 
-    // Create new markers and add them to the clusterer
+    // Create new markers and handle clustering
     const markersArray = this.markers.map(marker => {
         try {
             const url = marker.url && marker.url.startsWith('designs/')
@@ -243,31 +242,20 @@ export default {
             const _marker = new google.maps.Marker({
                 position: marker.position,
                 map: this.map, // Initially set on the map
-                icon: this.content.markersIcon
-                    ? url
-                        ? {
-                            url,
-                            scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                ? new google.maps.Size(marker.width, marker.height)
-                                : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                    : undefined,
-                        }
-                        : {
-                            url: defaultMarkerUrl,
-                            scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                : undefined,
-                        }
-                    : {},
+                icon: {
+                    url: url || defaultMarkerUrl,
+                    scaledSize: this.content.markersAutoSize 
+                        ? undefined 
+                        : new google.maps.Size(marker.width || this.content.defaultMarkerWidth, marker.height || this.content.defaultMarkerHeight)
+                },
                 animation: google.maps.Animation.DROP,
             });
 
             // Add the new marker to markerInstances
             this.markerInstances.push(_marker);
 
-            // Set up InfoWindow and event listeners...
-            // (keep the existing InfoWindow and event listener code here)
+            // Set up InfoWindow and event listeners
+            // (Add your InfoWindow code here)
 
             return _marker;
         } catch (error) {
@@ -283,20 +271,24 @@ export default {
     this.updateMarkerVisibility();
 }
 ,
+
+
 updateMarkerVisibility() {
     const zoomLevel = this.map.getZoom();
     const showMarkers = zoomLevel >= 15; // Adjust this threshold as needed
 
     this.markerInstances.forEach(marker => {
-        // Hide markers that are part of clusters or below the zoom threshold
-        if (showMarkers && !this.clusterer.getClusters().some(cluster => cluster.getMarkers().includes(marker))) {
-            marker.setMap(this.map);
+        if (showMarkers) {
+            marker.setMap(this.map); // Show markers at the specified zoom level
         } else {
-            marker.setMap(null);
+            // Hide markers that are clustered or below the zoom threshold
+            const isInCluster = this.clusterer.getClusters().some(cluster => cluster.getMarkers().includes(marker));
+            marker.setMap(isInCluster ? null : this.map);
         }
     });
 },
-     
+
+       
         setMapMarkerBounds() {
             if (!this.map || this.markers.length < 2) return;
             const mapBounds = new google.maps.LatLngBounds();
