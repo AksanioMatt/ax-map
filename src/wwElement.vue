@@ -281,27 +281,31 @@ export default {
                     });
 
                     _marker.addListener('click', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: { marker, domEvent: e.domEvent },
-                        });
+    this.$emit('trigger-event', {
+        name: 'marker:click',
+        event: { marker, domEvent: e.domEvent },
+    });
 
-                        const selectedFields = this.infoWindowFields; // Get the selected fields
-                        const markerData = marker.rawData; // Access the entire rawData for the marker
+    const selectedFields = this.infoWindowFields; // Get the selected fields
+    console.log("Selected Fields:", selectedFields); // Debugging log
 
-                        // Construct content for InfoWindow
-                        const infoContent = `
-                            <div class="info-window-content">
-                                <h3>${markerData.name || 'Unknown'}</h3>
-                                ${selectedFields.map(field => `
-                                    <p><strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${markerData[field] || 'N/A'}</p>
-                                `).join('')}
-                            </div>
-                        `;
+    const markerData = marker.rawData; // Access the entire rawData for the marker
+    console.log("Marker Data:", markerData); // Debugging log
 
-                        infowindow.setContent(infoContent); // Update content
-                        infowindow.open(this.map, _marker); // Open the InfoWindow
-                    });
+    // Construct content for InfoWindow
+    const infoContent = `
+        <div class="info-window-content">
+            <h3>${markerData.name || 'Unknown'}</h3>
+            ${selectedFields.map(field => `
+                <p><strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${markerData[field] !== undefined ? markerData[field] : 'N/A'}</p>
+            `).join('')}
+        </div>
+    `;
+
+    infowindow.setContent(infoContent); // Update content
+    infowindow.open(this.map, _marker); // Open the InfoWindow
+});
+
 
                     return _marker;
                 } catch (error) {
