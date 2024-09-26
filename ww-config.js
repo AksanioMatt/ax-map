@@ -470,7 +470,7 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'Array', // Allows multiple selections
+            type: 'Array',
             options: {
                 item: {
                     type: 'ObjectPropertyPath',
@@ -479,7 +479,8 @@ export default {
                             return null;
                         }
                         // Generate options based on marker fields
-                        return { object: content.markers[0] };
+                        const markerFields = Object.keys(content.markers[0]); // Get all field names from the first marker
+                        return markerFields.map(field => ({ value: field, label: field.charAt(0).toUpperCase() + field.slice(1) }));
                     },
                     label: {
                         en: 'Select field',
@@ -490,8 +491,7 @@ export default {
             defaultValue: ['name'], // Set 'name' as the default selected field
             section: 'settings',
         },
-        
-        
+      
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
             type: 'OnOff',
