@@ -281,6 +281,7 @@ export default {
             }
         }
     }
+    
 
     .map-placeholder {
         position: absolute;
