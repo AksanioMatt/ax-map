@@ -470,19 +470,19 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'ObjectPropertyPath', // Keep this for single field selection
+            type: 'ObjectPropertyPath', // Allow selecting multiple fields
             options: content => {
                 if (!content.markers.length || typeof content.markers[0] !== 'object') {
                     return null;
                 }
-                // List available fields from the first marker
+                // Return the first marker's properties as options
                 return {
                     object: content.markers[0],
                 };
             },
-            defaultValue: 'name', // Default field to display
+            defaultValue: [], // Set default to an empty array
             section: 'settings',
-        },
+        },        
         
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
