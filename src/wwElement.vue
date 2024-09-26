@@ -271,15 +271,11 @@ export default {
                               }
                         : null; // Set to null if markersIcon is not provided
 
-                    // Import AdvancedMarkerElement
-                    const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-
-                    let _marker = new AdvancedMarkerElement({
+                    let _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
-                        content: marker.content,
                         icon: icon,
-                        // Optionally, other properties can be added here
+                        animation: google.maps.Animation.DROP,
                     });
 
                     this.markerInstances.push(_marker);
@@ -287,7 +283,6 @@ export default {
                         content: marker.content,
                         maxWidth: 200,
                     });
-
                     _marker.addListener('mouseover', e => {
                         this.$emit('trigger-event', {
                             name: 'marker:mouseover',
@@ -359,6 +354,7 @@ export default {
     },
 };
 </script>
+
 <style lang="scss" scoped>
 .ww-map {
     position: relative;
