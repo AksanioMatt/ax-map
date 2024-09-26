@@ -470,16 +470,24 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'ObjectPropertyPath',
-            options: content => {
-                if (!content.markers.length || typeof content.markers[0] !== 'object') {
-                    return null;
-                }
-                return { object: content.markers[0] };
+            type: 'Array', // Change to Array type for multiple selections
+            options: {
+                item: {
+                    type: 'TextSelect',
+                    options: (content) => {
+                        // Create a list of possible fields from the first marker
+                        const fields = content.markers.length && typeof content.markers[0] === 'object' 
+                            ? Object.keys(content.markers[0]) 
+                            : [];
+                        
+                        return fields.map(field => ({ value: field, label: field.charAt(0).toUpperCase() + field.slice(1) }));
+                    },
+                },
             },
-            defaultValue: null,
+            defaultValue: ['name'], // Default field(s) to display
             section: 'settings',
         },
+        
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
             type: 'OnOff',

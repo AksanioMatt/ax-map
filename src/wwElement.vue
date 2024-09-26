@@ -286,22 +286,23 @@ export default {
                             event: { marker, domEvent: e.domEvent },
                         });
 
-                        // Construct content for InfoWindow dynamically
+                        const selectedFields = this.infoWindowFields || []; // Get the selected fields from the settings
                         const infoContent = document.createElement('div');
                         infoContent.className = 'info-window-content';
 
-                        // Assuming marker.rawData contains dynamic fields
-                        for (const [key, value] of Object.entries(marker.rawData)) {
-                            if (value) { // Only add fields with a value
+                        selectedFields.forEach(field => {
+                            const value = marker.rawData[field]; // Access the field dynamically
+                            if (value) {
                                 const paragraph = document.createElement('p');
-                                paragraph.innerHTML = `<strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}`;
+                                paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
                                 infoContent.appendChild(paragraph);
                             }
-                        }
+                        });
 
                         infowindow.setContent(infoContent); // Update content
                         infowindow.open(this.map, _marker); // Open the InfoWindow
                     });
+
 
 
                     return _marker;
