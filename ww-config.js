@@ -475,12 +475,19 @@ export default {
                 item: {
                     type: 'ObjectPropertyPath',
                     options: content => {
-                        if (!content.markers.length || typeof content.markers[0] !== 'object') {
-                            return null;
+                        // Validate the content and markers
+                        if (!content || !Array.isArray(content.markers) || content.markers.length === 0 || typeof content.markers[0] !== 'object') {
+                            return null; // Return null if markers are not valid
                         }
-                        // Generate options based on marker fields
-                        const markerFields = Object.keys(content.markers[0]); // Get all field names from the first marker
-                        return markerFields.map(field => ({ value: field, label: field.charAt(0).toUpperCase() + field.slice(1) }));
+        
+                        // Get all field names from the first marker and filter out invalid attribute names
+                        const markerFields = Object.keys(content.markers[0]).filter(key => isNaN(key));
+        
+                        // Map field names to options with labels
+                        return markerFields.map(field => ({
+                            value: field,
+                            label: field.charAt(0).toUpperCase() + field.slice(1),
+                        }));
                     },
                     label: {
                         en: 'Select field',
@@ -488,9 +495,10 @@ export default {
                     },
                 },
             },
-            defaultValue: ['name'], // Set 'name' as the default selected field
+            defaultValue: ['name'], // Default selected field
             section: 'settings',
         },
+        
       
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },

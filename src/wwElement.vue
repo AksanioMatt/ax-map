@@ -281,31 +281,39 @@ export default {
                     });
 
                     _marker.addListener('click', e => {
+                        // Emit the click event
                         this.$emit('trigger-event', {
                             name: 'marker:click',
                             event: { marker, domEvent: e.domEvent },
                         });
 
-                        // Get the selected fields, ensuring it's an array
-                        const selectedFields = Array.isArray(this.infoWindowFields) ? this.infoWindowFields : [];
-                        console.log("Selected Fields:", selectedFields); // Debugging log
+                        // Retrieve the selected fields and marker data
+                        const selectedFields = this.infoWindowFields; // Check selected fields
+                        const markerData = marker.rawData; // Access marker data
 
-                        const markerData = marker.rawData; // Access the entire rawData for the marker
-                        console.log("Marker Data:", markerData); // Debugging log
+                        // Debugging logs
+                        console.log('Selected Fields:', selectedFields);
+                        console.log('Marker Data:', markerData);
 
-                        // Construct content for InfoWindow
+                        // Construct InfoWindow content
                         const infoContent = `
-                            <div class="info-window-content">
-                                <h3>${markerData.name || 'Unknown'}</h3>
-                                ${selectedFields.map(field => `
-                                    <p><strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${markerData[field] !== undefined ? markerData[field] : 'N/A'}</p>
-                                `).join('')}
-                            </div>
-                        `;
+                                <div class="info-window-content">
+                                    <h3>${markerData.name || 'Unknown'}</h3>
+                                    ${selectedFields.map(field => {
+                                                    const value = markerData[field] || 'N/A';
+                                                    console.log(`Field: ${field}, Value: ${value}`); // Log each field and its value
+                                                    return `
+                                            <p><strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}</p>
+                                        `;
+                                                }).join('')}
+                                </div>
+                            `;
 
-                        infowindow.setContent(infoContent); // Update content
-                        infowindow.open(this.map, _marker); // Open the InfoWindow
+                        // Set the content and open the InfoWindow
+                        infowindow.setContent(infoContent);
+                        infowindow.open(this.map, _marker);
                     });
+
 
 
 
