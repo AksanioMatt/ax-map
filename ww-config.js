@@ -470,21 +470,17 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'Array', // Change to Array type for multiple selections
-            options: {
-                item: {
-                    type: 'TextSelect',
-                    options: (content) => {
-                        // Create a list of possible fields from the first marker
-                        const fields = content.markers.length && typeof content.markers[0] === 'object' 
-                            ? Object.keys(content.markers[0]) 
-                            : [];
-                        
-                        return fields.map(field => ({ value: field, label: field.charAt(0).toUpperCase() + field.slice(1) }));
-                    },
-                },
+            type: 'ObjectPropertyPath', // Keep this for single field selection
+            options: content => {
+                if (!content.markers.length || typeof content.markers[0] !== 'object') {
+                    return null;
+                }
+                // List available fields from the first marker
+                return {
+                    object: content.markers[0],
+                };
             },
-            defaultValue: ['name'], // Default field(s) to display
+            defaultValue: 'name', // Default field to display
             section: 'settings',
         },
         

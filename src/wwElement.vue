@@ -281,29 +281,25 @@ export default {
                     });
 
                     _marker.addListener('click', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: { marker, domEvent: e.domEvent },
-                        });
+    this.$emit('trigger-event', {
+        name: 'marker:click',
+        event: { marker, domEvent: e.domEvent },
+    });
 
-                        const selectedFields = this.infoWindowFields || []; // Get the selected fields from the settings
-                        const infoContent = document.createElement('div');
-                        infoContent.className = 'info-window-content';
+    const selectedField = this.infoWindowFields || 'name'; // Get the selected field or default to 'name'
+    const markerData = marker.rawData[selectedField]; // Access the selected field dynamically
 
-                        selectedFields.forEach(field => {
-                            const value = marker.rawData[field]; // Access the field dynamically
-                            if (value) {
-                                const paragraph = document.createElement('p');
-                                paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
-                                infoContent.appendChild(paragraph);
-                            }
-                        });
+    // Construct content for InfoWindow
+    const infoContent = `
+        <div class="info-window-content">
+            <h3>${marker.rawData[selectedField] || 'Unknown'}</h3>
+            <p><strong>${selectedField.charAt(0).toUpperCase() + selectedField.slice(1)}:</strong> ${markerData || 'N/A'}</p>
+        </div>
+    `;
 
-                        infowindow.setContent(infoContent); // Update content
-                        infowindow.open(this.map, _marker); // Open the InfoWindow
-                    });
-
-
+    infowindow.setContent(infoContent); // Update content
+    infowindow.open(this.map, _marker); // Open the InfoWindow
+});
 
                     return _marker;
                 } catch (error) {
