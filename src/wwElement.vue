@@ -157,18 +157,21 @@ export default {
         },
     },
     mounted() {
-        this.initMap();
+        // Ensure initMap is called after the DOM is fully rendered
+        this.$nextTick(() => {
+            this.initMap();
 
-        // Fixed bound require the map to be visible
-        this.observer = new IntersectionObserver(
-            changes => {
-                if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
-                    this.setMapMarkerBounds();
-                }
-            },
-            { trackVisibility: true, delay: 100 }
-        );
-        this.observer.observe(this.$refs.map);
+            // Fixed bound require the map to be visible
+            this.observer = new IntersectionObserver(
+                changes => {
+                    if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
+                        this.setMapMarkerBounds();
+                    }
+                },
+                { trackVisibility: true, delay: 100 }
+            );
+            this.observer.observe(this.$refs.map);
+        });
     },
     beforeUnmount() {
         this.observer.disconnect();
@@ -196,6 +199,12 @@ export default {
             }
 
             try {
+                // Check if this.$refs.map is available
+                if (!this.$refs.map) {
+                    console.error('Map element is not available');
+                    return;
+                }
+
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
                 this.map.addListener('click', mapsMouseEvent => {
                     mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
@@ -217,9 +226,7 @@ export default {
             for (const markerInstance of this.markerInstances) {
                 markerInstance.setMap(null);
             }
-            if (this.clusterer) {
-                this.clusterer.clearMarkers();
-            }
+
             this.markerInstances = [];
 
             const markersArray = this.markers.map(marker => {
@@ -238,31 +245,31 @@ export default {
                         icon: this.content.markersIcon
                             ? url
                                 ? {
-                                    url,
-                                    scaledSize:
-                                        !this.content.markersAutoSize && marker.width && marker.height
-                                            ? new google.maps.Size(marker.width, marker.height)
-                                            : !this.content.markersAutoSize &&
+                                      url,
+                                      scaledSize:
+                                          !this.content.markersAutoSize && marker.width && marker.height
+                                              ? new google.maps.Size(marker.width, marker.height)
+                                              : !this.content.markersAutoSize &&
                                                 this.content.defaultMarkerWidth &&
                                                 this.content.defaultMarkerHeight
-                                                ? new google.maps.Size(
+                                              ? new google.maps.Size(
                                                     this.content.defaultMarkerWidth,
                                                     this.content.defaultMarkerHeight
                                                 )
-                                                : undefined,
-                                }
+                                              : undefined,
+                                  }
                                 : {
-                                    url: defaultMarkerUrl,
-                                    scaledSize:
-                                        !this.content.markersAutoSize &&
-                                            this.content.defaultMarkerWidth &&
-                                            this.content.defaultMarkerHeight
-                                            ? new google.maps.Size(
-                                                this.content.defaultMarkerWidth,
-                                                this.content.defaultMarkerHeight
-                                            )
-                                            : undefined,
-                                }
+                                      url: defaultMarkerUrl,
+                                      scaledSize:
+                                          !this.content.markersAutoSize &&
+                                          this.content.defaultMarkerWidth &&
+                                          this.content.defaultMarkerHeight
+                                              ? new google.maps.Size(
+                                                    this.content.defaultMarkerWidth,
+                                                    this.content.defaultMarkerHeight
+                                                )
+                                              : undefined,
+                                  }
                             : {},
                         animation: google.maps.Animation.DROP,
                     });
@@ -305,9 +312,13 @@ export default {
                 }
             });
 
+            // Initialize MarkerClusterer with the markers
             this.clusterer = new MarkerClusterer({
                 map: this.map,
-                markers: markersArray
+                markers: markersArray,
+                options: {
+                    minimumClusterSize: 2, 
+                },
             });
 
             if (this.content.fixedBounds) {
@@ -323,19 +334,13 @@ export default {
             }
         },
         setMapMarkerBounds() {
-            if (!this.map || this.markerInstances.length < 2) return;
-
+            if (!this.map || this.markers.length < 2) return;
             const mapBounds = new google.maps.LatLngBounds();
-
-            // Loop through the new markerInstances to calculate the bounds
-            for (const markerInstance of this.markerInstances) {
-                mapBounds.extend(markerInstance.getPosition());
+            for (const marker of this.markers) {
+                mapBounds.extend(marker.position);
             }
-
-            // Adjust the map view to fit the new markers
             this.map.fitBounds(mapBounds);
         },
-
         /* wwEditor:start */
         getMarkerTestEvent() {
             if (!this.markers.length) throw new Error('No markers found');
@@ -380,7 +385,6 @@ export default {
                 filter: blur(8px);
             }
         }
-
         .map-placeholder {
             z-index: 2;
             position: absolute;
