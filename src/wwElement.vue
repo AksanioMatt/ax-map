@@ -187,6 +187,8 @@ export default {
                 return advancedMarker;
             });
 
+            
+            
             // Initialize MarkerClusterer with the markers
             this.clusterer = new MarkerClusterer({
                 map: this.map,
