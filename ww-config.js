@@ -470,37 +470,16 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'Array',
-            options: {
-                item: {
-                    type: 'ObjectPropertyPath',
-                    options: content => {
-                        if (!Array.isArray(content.markers) || content.markers.length === 0 || typeof content.markers[0] !== 'object') {
-                            return []; // Ensure markers is valid
-                        }
-        
-                        // Get all field names from the first marker
-                        const markerFields = Object.keys(content.markers[0]).filter(key => typeof key === 'string' && isNaN(key));
-        
-                        // Map field names to options with labels
-                        return markerFields.map(field => ({
-                            value: field,
-                            label: field.charAt(0).toUpperCase() + field.slice(1), // Capitalize first letter for label
-                        }));
-                    },
-                    label: {
-                        en: 'Select field',
-                        fr: 'Sélectionner le champ',
-                    },
-                },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.markers.length || typeof content.markers[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.markers[0] };
             },
-            defaultValue: [], 
+            defaultValue: null,
             section: 'settings',
         },
-        
-        
-        
-      
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
             type: 'OnOff',

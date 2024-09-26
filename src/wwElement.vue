@@ -212,133 +212,125 @@ export default {
             }
         },
         async updateMapMarkers() {
-            if (!this.markers || !this.loader) return;
+    if (!this.markers || !this.loader) return;
 
-            for (const markerInstance of this.markerInstances) {
-                markerInstance.setMap(null);
-            }
-
-            this.markerInstances = [];
-
-            const markersArray = this.markers.map(marker => {
-                try {
-                    const url =
-                        marker.url && marker.url.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                            : marker.url;
-                    const defaultMarkerUrl =
-                        this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                            : this.content.defaultMarkerUrl;
-
-                    let _marker = new google.maps.Marker({
-                        position: marker.position,
-                        map: this.map,
-                        icon: this.content.markersIcon
-                            ? url
-                                ? {
-                                    url,
-                                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                        ? new google.maps.Size(marker.width, marker.height)
-                                        : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                            ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                            : undefined,
-                                }
-                                : {
-                                    url: defaultMarkerUrl,
-                                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                        : undefined,
-                                }
-                            : {},
-                        animation: google.maps.Animation.DROP,
-                    });
-
-                    this.markerInstances.push(_marker);
-                    const infowindow = new google.maps.InfoWindow({
-                        content: marker.content, // This will be overridden in click listener
-                        maxWidth: 200,
-                    });
-
-                    _marker.addListener('mouseover', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseover',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
-                    });
-
-                    _marker.addListener('mouseout', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseout',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover') {
-                            infowindow.close();
-                        }
-                    });
-
-                    _marker.addListener('click', e => {
-    // Emit the click event
-    this.$emit('trigger-event', {
-        name: 'marker:click',
-        event: { marker, domEvent: e.domEvent },
-    });
-
-    // Retrieve selected fields and marker data
-    const selectedFields = this.infoWindowFields || []; // Ensure it's an array
-    const markerData = marker.rawData || {}; // Ensure it's an object
-
-    // Debugging logs
-    console.log('Selected Fields:', selectedFields);
-    console.log('Marker Data:', markerData);
-
-    // Construct InfoWindow content
-    const infoContent = document.createElement('div'); // Create a div for content
-    const header = document.createElement('h3');
-    header.textContent = markerData.name || 'Unknown'; // Set marker name
-    infoContent.appendChild(header); // Append header to content
-
-    // Iterate through selected fields to populate content
-    selectedFields.forEach(field => {
-        const value = markerData[field] !== undefined ? markerData[field] : 'N/A';
-        const paragraph = document.createElement('p');
-        paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
-        infoContent.appendChild(paragraph); // Append each field to content
-    });
-
-    // Update the InfoWindow safely
-    try {
-        infowindow.setContent(infoContent); // Update content
-        infowindow.open(this.map, _marker); // Open the InfoWindow
-    } catch (error) {
-        console.error('Error setting InfoWindow content:', error);
+    // Remove existing markers from the map
+    for (const markerInstance of this.markerInstances) {
+        markerInstance.setMap(null);
     }
-});
 
+    // Clear the markerInstances array to prepare for new markers
+    this.markerInstances = [];
 
-                    return _marker;
-                } catch (error) {
-                    console.error(error);
+    // Create new markers
+    const markersArray = this.markers.map(marker => {
+        try {
+            const url =
+                marker.url && marker.url.startsWith('designs/')
+                    ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                    : marker.url;
+            const defaultMarkerUrl =
+                this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                    ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                    : this.content.defaultMarkerUrl;
+
+            let _marker = new google.maps.Marker({
+                position: marker.position,
+                map: this.map,
+                icon: this.content.markersIcon
+                    ? url
+                        ? {
+                            url,
+                            scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                ? new google.maps.Size(marker.width, marker.height)
+                                : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                    : undefined,
+                        }
+                        : {
+                            url: defaultMarkerUrl,
+                            scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                : undefined,
+                        }
+                    : {},
+                animation: google.maps.Animation.DROP,
+            });
+
+            // Add the new marker to the markerInstances array
+            this.markerInstances.push(_marker);
+
+            const infowindow = new google.maps.InfoWindow({
+                content: marker.content,
+                maxWidth: 200,
+            });
+
+            // Event listeners for marker
+            _marker.addListener('mouseover', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseover',
+                    event: { marker, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                    infowindow.open(this.map, _marker);
                 }
             });
 
-            // Initialize MarkerClusterer with the markers
-            this.clusterer = new MarkerClusterer({
-                map: this.map,
-                markers: markersArray,
-                options: {
-                    minimumClusterSize: 2, // Minimum markers to show clustering
-                },
+            _marker.addListener('mouseout', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseout',
+                    event: { marker, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover') {
+                    infowindow.close();
+                }
             });
 
-            if (this.content.fixedBounds) {
-                this.setMapMarkerBounds();
-            }
+            _marker.addListener('click', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:click',
+                    event: { marker, domEvent: e.domEvent },
+                });
+
+                // Construct content for InfoWindow
+                const name = marker.rawData.name;
+                const city = marker.rawData.city;
+                const phone = marker.rawData.phone_number;
+                const country = marker.rawData.country;
+
+                const infoContent = `
+                    <div class="info-window-content">
+                        <h3>${name}</h3>
+                        <p><strong>City:</strong> ${city}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        <p><strong>Country:</strong> ${country}</p>
+                    </div>
+                `;
+
+                infowindow.setContent(infoContent);
+                infowindow.open(this.map, _marker);
+            });
+
+            return _marker;
+        } catch (error) {
+            console.error(error);
         }
-        ,
+    }).filter(Boolean); // Filter out any undefined markers
+
+    // Initialize MarkerClusterer with the new markers
+    this.clusterer = new MarkerClusterer({
+        map: this.map,
+        markers: markersArray,
+        options: {
+            minimumClusterSize: 2,
+        },
+    });
+
+    if (this.content.fixedBounds) {
+        this.setMapMarkerBounds();
+    }
+}
+,
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
             const showMarkers = zoomLevel >= 15; // Change this value as needed
@@ -450,30 +442,6 @@ export default {
                         transition: 0.3s;
                     }
                 }
-            }
-        }
-
-        .info-window-content {
-            font-family: Arial, sans-serif;
-            color: #333;
-            background-color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-
-            h3 {
-                margin: 0;
-                font-size: 1.2em;
-                color: #099af2; // Title color
-            }
-
-            p {
-                margin: 4px 0;
-                font-size: 0.9em;
-            }
-
-            strong {
-                color: #555; // Label color
             }
         }
     }
