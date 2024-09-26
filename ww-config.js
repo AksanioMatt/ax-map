@@ -1,10 +1,4 @@
 export default {
-    // Maker icon (on/off)
-    // if (prev = on) Maker auto size (on/off)
-    // if Icon URL
-    // if (!auto) Icon width (d=50)
-    // if (!auto) Icon height (d=50)
-    // if (w||h not int) auto
     options: {
         sizable: true,
     },
@@ -167,39 +161,33 @@ export default {
             type: 'Image',
             bindable: true,
             options: { nullable: true },
-            /* wwEditor:start */
             hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon,
             bindingValidation: {
                 type: 'string',
                 tooltip: 'A string that represents the icon url: `"https://.../.../my_image.png"`',
             },
-            /* wwEditor:end */
         },
         defaultMarkerWidth: {
             label: 'Width',
             type: 'Number',
             bindable: true,
             options: { min: 0, step: 1, defaultValue: 40 },
-            /* wwEditor:start */
             hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon || content.markersAutoSize,
             bindingValidation: {
                 type: 'number',
                 tooltip: 'A number that defines the width of the icon: `40`',
             },
-            /* wwEditor:end */
         },
         defaultMarkerHeight: {
             label: 'Height',
             type: 'Number',
             bindable: true,
             options: { min: 0, step: 1, defaultValue: 40 },
-            /* wwEditor:start */
             hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon || content.markersAutoSize,
             bindingValidation: {
                 type: 'number',
                 tooltip: 'A number that defines the height of the icon: `40`',
             },
-            /* wwEditor:end */
         },
         mapStyleJSON: {
             hidden: content => content.mapStyle !== 'custom' || content.defaultMapType === 'satellite',
@@ -218,12 +206,10 @@ export default {
             },
             defaultValue: '',
             bindable: true,
-            /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
                 tooltip: 'A string that represents the API key: `"key********************"`',
             },
-            /* wwEditor:end */
         },
         lat: {
             section: 'settings',
@@ -234,12 +220,10 @@ export default {
             },
             defaultValue: '40.712784',
             bindable: true,
-            /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
-                tooltip: 'A string that defines the latitue: `"40.712784"`',
+                tooltip: 'A string that defines the latitude: `"40.712784"`',
             },
-            /* wwEditor:end */
         },
         lng: {
             section: 'settings',
@@ -250,12 +234,10 @@ export default {
             },
             defaultValue: '-74.005941',
             bindable: true,
-            /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
                 tooltip: 'A string that defines the longitude: `"15.347554"`',
             },
-            /* wwEditor:end */
         },
         zoom: {
             section: 'settings',
@@ -268,12 +250,10 @@ export default {
             },
             defaultValue: 11,
             bindable: true,
-            /* wwEditor:start */
             bindingValidation: {
                 type: 'number',
                 tooltip: 'A number that defines the zoom: `11`',
             },
-            /* wwEditor:end */
         },
         markers: {
             section: 'settings',
@@ -283,7 +263,14 @@ export default {
             options: {
                 item: {
                     type: 'Object',
-                    defaultValue: { name: '', lat: 0, lng: 0, width: 40, height: 40 },
+                    defaultValue: {
+                        name: '',
+                        lat: 0,
+                        lng: 0,
+                        width: 40,
+                        height: 40,
+                        infoWindowContent: { city: '', country: '', phone: '' }, // Added structured infoWindowContent
+                    },
                     options: {
                         item: {
                             name: {
@@ -301,62 +288,77 @@ export default {
                                 type: 'Text',
                                 options: { placeholder: 'Longitude' },
                             },
+                            infoWindowContent: {
+                                type: 'Object',
+                                label: { en: 'Info Window Content' },
+                                options: {
+                                    item: {
+                                        city: {
+                                            type: 'Text',
+                                            label: { en: 'City' },
+                                            options: { placeholder: 'City Name' },
+                                        },
+                                        country: {
+                                            type: 'Text',
+                                            label: { en: 'Country' },
+                                            options: { placeholder: 'Country Name' },
+                                        },
+                                        phone: {
+                                            type: 'Text',
+                                            label: { en: 'Phone' },
+                                            options: { placeholder: 'Phone Number' },
+                                        },
+                                    },
+                                },
+                            },
                             url: {
                                 label: { en: 'Custom marker icon' },
                                 type: 'Image',
                                 bindable: true,
                                 options: { nullable: true },
-                                /* wwEditor:start */
                                 hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon,
                                 bindingValidation: {
                                     type: 'string',
                                     tooltip: 'A string that represents the icon url: `"https://.../.../my_image.png"`',
                                 },
-                                /* wwEditor:end */
                             },
                             width: {
                                 label: 'Width',
                                 type: 'Number',
                                 bindable: true,
                                 options: { min: 0, step: 1, defaultValue: 40 },
-                                /* wwEditor:start */
                                 hidden: (content, _sidepanelContent, boundProps) =>
                                     !content.markersIcon || content.markersAutoSize,
                                 bindingValidation: {
                                     type: 'number',
                                     tooltip: 'A number that defines the width of the icon: `40`',
                                 },
-                                /* wwEditor:end */
                             },
                             height: {
                                 label: 'Height',
                                 type: 'Number',
                                 bindable: true,
                                 options: { min: 0, step: 1, defaultValue: 40 },
-                                /* wwEditor:start */
                                 hidden: (content, _sidepanelContent, boundProps) =>
                                     !content.markersIcon || content.markersAutoSize,
                                 bindingValidation: {
                                     type: 'number',
                                     tooltip: 'A number that defines the height of the icon: `40`',
                                 },
-                                /* wwEditor:end */
                             },
                         },
                     },
                 },
             },
             defaultValue: [
-                { name: 'New York', lat: 40.712784, lng: -74.005941 },
-                { name: 'Brooklyn', lat: 40.650002, lng: -73.949997 },
+                { name: 'New York', lat: 40.712784, lng: -74.005941, infoWindowContent: { city: 'New York', country: 'USA', phone: '1234567890' } },
+                { name: 'Brooklyn', lat: 40.650002, lng: -73.949997, infoWindowContent: { city: 'Brooklyn', country: 'USA', phone: '0987654321' } },
             ],
-            /* wwEditor:start */
             bindingValidation: {
                 type: 'array',
                 tooltip:
                     'A collection of data in array format: \n\n `[{}, {}, ...] || ["string1", "string2", ...] || [1, 2, ...]`',
             },
-            /* wwEditor:end */
         },
         hintFields: {
             hidden: (content, sidepanelContent, boundProps) => !boundProps.markers || content.markers,
@@ -516,7 +518,5 @@ export default {
             section: 'settings',
             defaultValue: true,
         },
-        
     },
-  };
-  
+};
