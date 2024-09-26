@@ -142,7 +142,9 @@ export default {
                     apiKey: googleKey,
                     language: wwLib.wwLang.lang,
                 });
-                await this.loader.load();
+                await this.loader.load({
+                    libraries: ['places', 'marker'] // Ensure 'marker' is included
+                });
             }
 
             try {
@@ -167,6 +169,11 @@ export default {
             const { google } = window;
 
             if (!this.markers.length || !this.loader) return;
+
+            if (!google.maps.marker || !google.maps.marker.AdvancedMarkerElement) {
+                console.error('AdvancedMarkerElement is not available.');
+                return; // Handle as appropriate
+            }
 
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
