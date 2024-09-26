@@ -475,15 +475,12 @@ export default {
                 item: {
                     type: 'ObjectPropertyPath',
                     options: content => {
-                        // Validate the content and markers
-                        if (!content || !Array.isArray(content.markers) || content.markers.length === 0 || typeof content.markers[0] !== 'object') {
-                            return []; // Return an empty array if markers are not valid
+                        if (!Array.isArray(content.markers) || content.markers.length === 0 || typeof content.markers[0] !== 'object') {
+                            return []; // Ensure markers is valid
                         }
         
-                        // Get all field names from the first marker, ensuring valid attribute names
-                        const markerFields = Object.keys(content.markers[0]).filter(key => {
-                            return typeof key === 'string' && isNaN(key); // Filter out numeric keys
-                        });
+                        // Get all field names from the first marker
+                        const markerFields = Object.keys(content.markers[0]).filter(key => typeof key === 'string' && isNaN(key));
         
                         // Map field names to options with labels
                         return markerFields.map(field => ({
@@ -500,6 +497,7 @@ export default {
             defaultValue: [], 
             section: 'settings',
         },
+        
         
         
       

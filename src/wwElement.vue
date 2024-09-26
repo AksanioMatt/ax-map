@@ -281,42 +281,42 @@ export default {
                     });
 
                     _marker.addListener('click', e => {
-                        // Emit the click event
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: { marker, domEvent: e.domEvent },
-                        });
+    // Emit the click event
+    this.$emit('trigger-event', {
+        name: 'marker:click',
+        event: { marker, domEvent: e.domEvent },
+    });
 
-                        // Retrieve selected fields and marker data
-                        const selectedFields = this.infoWindowFields || []; // Ensure it's an array
-                        const markerData = marker.rawData || {}; // Ensure it's an object
+    // Retrieve selected fields and marker data
+    const selectedFields = this.infoWindowFields || []; // Ensure it's an array
+    const markerData = marker.rawData || {}; // Ensure it's an object
 
-                        // Debugging logs
-                        console.log('Selected Fields:', selectedFields);
-                        console.log('Marker Data:', markerData);
+    // Debugging logs
+    console.log('Selected Fields:', selectedFields);
+    console.log('Marker Data:', markerData);
 
-                        // Construct InfoWindow content
-                        const infoContent = document.createElement('div'); // Create a div for content
-                        const header = document.createElement('h3');
-                        header.textContent = markerData.name || 'Unknown'; // Set marker name
-                        infoContent.appendChild(header); // Append header to content
+    // Construct InfoWindow content
+    const infoContent = document.createElement('div'); // Create a div for content
+    const header = document.createElement('h3');
+    header.textContent = markerData.name || 'Unknown'; // Set marker name
+    infoContent.appendChild(header); // Append header to content
 
-                        // Iterate through selected fields to populate content
-                        selectedFields.forEach(field => {
-                            const value = markerData[field] !== undefined ? markerData[field] : 'N/A';
-                            const paragraph = document.createElement('p');
-                            paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
-                            infoContent.appendChild(paragraph); // Append each field to content
-                        });
+    // Iterate through selected fields to populate content
+    selectedFields.forEach(field => {
+        const value = markerData[field] !== undefined ? markerData[field] : 'N/A';
+        const paragraph = document.createElement('p');
+        paragraph.innerHTML = `<strong>${field.charAt(0).toUpperCase() + field.slice(1)}:</strong> ${value}`;
+        infoContent.appendChild(paragraph); // Append each field to content
+    });
 
-                        // Update the InfoWindow safely
-                        try {
-                            infowindow.setContent(infoContent); // Update content
-                            infowindow.open(this.map, _marker); // Open the InfoWindow
-                        } catch (error) {
-                            console.error('Error setting InfoWindow content:', error);
-                        }
-                    });
+    // Update the InfoWindow safely
+    try {
+        infowindow.setContent(infoContent); // Update content
+        infowindow.open(this.map, _marker); // Open the InfoWindow
+    } catch (error) {
+        console.error('Error setting InfoWindow content:', error);
+    }
+});
 
 
                     return _marker;
