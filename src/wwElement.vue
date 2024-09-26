@@ -214,13 +214,19 @@ export default {
         async updateMapMarkers() {
     if (!this.markers || !this.loader) return;
 
-    // Remove existing markers from the map
+    // Clear existing markers from the map
     for (const markerInstance of this.markerInstances) {
         markerInstance.setMap(null);
     }
 
-    // Clear the markerInstances array to prepare for new markers
+    // Clear the markerInstances array
     this.markerInstances = [];
+
+    // If a clusterer exists, clear it
+    if (this.clusterer) {
+        this.clusterer.clearMarkers();
+        this.clusterer = null; // Reset the clusterer
+    }
 
     // Create new markers
     const markersArray = this.markers.map(marker => {
@@ -317,7 +323,7 @@ export default {
         }
     }).filter(Boolean); // Filter out any undefined markers
 
-    // Initialize MarkerClusterer with the new markers
+    // Initialize a new MarkerClusterer with the new markers
     this.clusterer = new MarkerClusterer({
         map: this.map,
         markers: markersArray,
@@ -330,6 +336,7 @@ export default {
         this.setMapMarkerBounds();
     }
 }
+
 ,
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
