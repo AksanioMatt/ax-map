@@ -161,7 +161,7 @@ export default {
         this.$nextTick(() => {
             this.initMap();
 
-            // Fixed bound require the map to be visible
+            // Fixed bounds require the map to be visible
             this.observer = new IntersectionObserver(
                 changes => {
                     if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
@@ -239,38 +239,42 @@ export default {
                         this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
                             ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                             : this.content.defaultMarkerUrl;
+
+                    // Ensure the icon property is properly set
+                    const icon = this.content.markersIcon
+                        ? url
+                            ? {
+                                  url,
+                                  scaledSize:
+                                      !this.content.markersAutoSize && marker.width && marker.height
+                                          ? new google.maps.Size(marker.width, marker.height)
+                                          : !this.content.markersAutoSize &&
+                                            this.content.defaultMarkerWidth &&
+                                            this.content.defaultMarkerHeight
+                                          ? new google.maps.Size(
+                                                this.content.defaultMarkerWidth,
+                                                this.content.defaultMarkerHeight
+                                            )
+                                          : undefined,
+                              }
+                            : {
+                                  url: defaultMarkerUrl,
+                                  scaledSize:
+                                      !this.content.markersAutoSize &&
+                                      this.content.defaultMarkerWidth &&
+                                      this.content.defaultMarkerHeight
+                                          ? new google.maps.Size(
+                                                this.content.defaultMarkerWidth,
+                                                this.content.defaultMarkerHeight
+                                            )
+                                          : undefined,
+                              }
+                        : null; // Set to null if markersIcon is not provided
+
                     let _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
-                        icon: this.content.markersIcon
-                            ? url
-                                ? {
-                                      url,
-                                      scaledSize:
-                                          !this.content.markersAutoSize && marker.width && marker.height
-                                              ? new google.maps.Size(marker.width, marker.height)
-                                              : !this.content.markersAutoSize &&
-                                                this.content.defaultMarkerWidth &&
-                                                this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
-                                : {
-                                      url: defaultMarkerUrl,
-                                      scaledSize:
-                                          !this.content.markersAutoSize &&
-                                          this.content.defaultMarkerWidth &&
-                                          this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
-                            : {},
+                        icon: icon,
                         animation: google.maps.Animation.DROP,
                     });
 
