@@ -212,84 +212,91 @@ export default {
             }
         },
         async updateMapMarkers() {
-            if (!this.markers || !this.loader) return;
+    if (!this.markers || !this.loader) return;
 
-            // Clear existing markers from the map
-            this.markerInstances.forEach(markerInstance => {
-                markerInstance.setMap(null);
-            });
-            this.markerInstances = []; // Clear the markerInstances array
+    // Clear existing markers from the map
+    if (this.markerInstances.length) {
+        this.markerInstances.forEach(markerInstance => {
+            markerInstance.setMap(null);
+        });
+        this.markerInstances = []; // Clear the markerInstances array
+    }
 
-            // If a clusterer exists, clear it and reset
-            if (this.clusterer) {
-                this.clusterer.clearMarkers();
-                this.clusterer = null; // Reset the clusterer
-            }
+    // If a clusterer exists, clear it and reset
+    if (this.clusterer) {
+        this.clusterer.clearMarkers();
+        this.clusterer = null; // Reset the clusterer
+    }
 
-            // Create new markers and handle clustering
-            const markersArray = this.markers.map(marker => {
-                try {
-                    const url = marker.url && marker.url.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                        : marker.url;
-                    const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                        : this.content.defaultMarkerUrl;
+    // Create new markers and handle clustering
+    const markersArray = this.markers.map(marker => {
+        try {
+            const url = marker.url && marker.url.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                : marker.url;
+            const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                : this.content.defaultMarkerUrl;
 
-                    const _marker = new google.maps.Marker({
-                        position: marker.position,
-                        map: this.map,
-                        icon: this.content.markersIcon
-                            ? url
-                                ? {
-                                    url,
-                                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                        ? new google.maps.Size(marker.width, marker.height)
-                                        : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                            ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                            : undefined,
-                                }
-                                : {
-                                    url: defaultMarkerUrl,
-                                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                        : undefined,
-                                }
-                            : {},
-                        animation: google.maps.Animation.DROP,
-                    });
-
-                    // Add the new marker to markerInstances
-                    this.markerInstances.push(_marker);
-
-                    // Set up InfoWindow and event listeners...
-                    // (keep the existing InfoWindow and event listener code here)
-
-                    return _marker;
-                } catch (error) {
-                    console.error('Error creating marker:', error);
-                }
-            }).filter(Boolean); // Filter out any undefined markers
-
-            // Initialize a new MarkerClusterer with the new markers
-            this.clusterer = new MarkerClusterer({
-                map: this.map,
-                markers: markersArray,
-                options: {
-                    minimumClusterSize: 2,
-                },
+            const _marker = new google.maps.Marker({
+                position: marker.position,
+                map: this.map, // Initially set to the map
+                icon: this.content.markersIcon
+                    ? url
+                        ? {
+                            url,
+                            scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                ? new google.maps.Size(marker.width, marker.height)
+                                : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                    : undefined,
+                        }
+                        : {
+                            url: defaultMarkerUrl,
+                            scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                : undefined,
+                        }
+                    : {},
+                animation: google.maps.Animation.DROP,
             });
 
-            // Hide individual markers when they are clustered
-            markersArray.forEach(marker => {
-                marker.setMap(this.clusterer.getClusters().length ? null : this.map);
-            });
+            // Add the new marker to markerInstances
+            this.markerInstances.push(_marker);
 
-            // Set bounds if fixedBounds is enabled
-            if (this.content.fixedBounds) {
-                this.setMapMarkerBounds();
-            }
+            // Set up InfoWindow and event listeners...
+            // (keep the existing InfoWindow and event listener code here)
+
+            return _marker;
+        } catch (error) {
+            console.error('Error creating marker:', error);
         }
+    }).filter(Boolean); // Filter out any undefined markers
+
+    // Initialize a new MarkerClusterer with the new markers
+    this.clusterer = new MarkerClusterer({
+        map: this.map,
+        markers: markersArray,
+        options: {
+            minimumClusterSize: 2,
+        },
+    });
+
+    // Hide individual markers when they are clustered
+    const clusters = this.clusterer.getClusters();
+    const clusteredMarkers = clusters.flatMap(cluster => cluster.getMarkers());
+
+    this.markerInstances.forEach(marker => {
+        // Hide markers that are in clusters
+        marker.setMap(clusteredMarkers.includes(marker) ? null : this.map);
+    });
+
+    // Set bounds if fixedBounds is enabled
+    if (this.content.fixedBounds) {
+        this.setMapMarkerBounds();
+    }
+}
+
 
 
 
