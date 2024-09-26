@@ -164,6 +164,8 @@ export default {
             }
         },
         async updateMapMarkers() {
+            const { google } = window;
+
             if (!this.markers.length || !this.loader) return;
 
             if (this.clusterer) {
@@ -187,8 +189,6 @@ export default {
                 return advancedMarker;
             });
 
-            
-            
             // Initialize MarkerClusterer with the markers
             this.clusterer = new MarkerClusterer({
                 map: this.map,
