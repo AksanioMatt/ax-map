@@ -215,32 +215,28 @@ export default {
     if (!this.markers || !this.loader) return;
 
     // Clear existing markers from the map
-    for (const markerInstance of this.markerInstances) {
+    this.markerInstances.forEach(markerInstance => {
         markerInstance.setMap(null);
-    }
+    });
+    this.markerInstances = []; // Clear the markerInstances array
 
-    // Clear the markerInstances array
-    this.markerInstances = [];
-
-    // If a clusterer exists, clear it
+    // If a clusterer exists, clear it and reset
     if (this.clusterer) {
         this.clusterer.clearMarkers();
         this.clusterer = null; // Reset the clusterer
     }
 
-    // Create new markers
+    // Create new markers and handle clustering
     const markersArray = this.markers.map(marker => {
         try {
-            const url =
-                marker.url && marker.url.startsWith('designs/')
-                    ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                    : marker.url;
-            const defaultMarkerUrl =
-                this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                    ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                    : this.content.defaultMarkerUrl;
+            const url = marker.url && marker.url.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                : marker.url;
+            const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                : this.content.defaultMarkerUrl;
 
-            let _marker = new google.maps.Marker({
+            const _marker = new google.maps.Marker({
                 position: marker.position,
                 map: this.map,
                 icon: this.content.markersIcon
@@ -263,15 +259,15 @@ export default {
                 animation: google.maps.Animation.DROP,
             });
 
-            // Add the new marker to the markerInstances array
+            // Add the new marker to markerInstances
             this.markerInstances.push(_marker);
 
+            // Set up InfoWindow and event listeners
             const infowindow = new google.maps.InfoWindow({
                 content: marker.content,
                 maxWidth: 200,
             });
 
-            // Event listeners for marker
             _marker.addListener('mouseover', e => {
                 this.$emit('trigger-event', {
                     name: 'marker:mouseover',
@@ -298,7 +294,6 @@ export default {
                     event: { marker, domEvent: e.domEvent },
                 });
 
-                // Construct content for InfoWindow
                 const name = marker.rawData.name;
                 const city = marker.rawData.city;
                 const phone = marker.rawData.phone_number;
@@ -312,14 +307,13 @@ export default {
                         <p><strong>Country:</strong> ${country}</p>
                     </div>
                 `;
-
                 infowindow.setContent(infoContent);
                 infowindow.open(this.map, _marker);
             });
 
             return _marker;
         } catch (error) {
-            console.error(error);
+            console.error('Error creating marker:', error);
         }
     }).filter(Boolean); // Filter out any undefined markers
 
@@ -332,6 +326,7 @@ export default {
         },
     });
 
+    // Set bounds if fixedBounds is enabled
     if (this.content.fixedBounds) {
         this.setMapMarkerBounds();
     }
