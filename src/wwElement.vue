@@ -224,7 +224,7 @@ export default {
             if (!this.markers || !this.loader) return;
             if (this.clusterer) {
                 this.clusterer.clearMarkers(false);
-                this.clusterer = null; // Reset the clusterer
+                this.clusterer = null; 
             }
 
             for (const markerInstance of this.markerInstances) {
