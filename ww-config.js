@@ -465,7 +465,7 @@ export default {
             defaultValue: true,
         },
         infoWindowFields: {
-            hidden: content => !content.infoWindowEnabled,
+            hidden: content => !content.infoWindowEnabled || !content.markers || content.markers.length === 0,
             label: {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',

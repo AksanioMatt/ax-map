@@ -286,24 +286,23 @@ export default {
                             event: { marker, domEvent: e.domEvent },
                         });
 
-                        // Construct content for InfoWindow
-                        const name = marker.rawData.name; // Adjust field names as necessary
-                        const city = marker.rawData.city; // Ensure these fields exist in your marker data
-                        const phone = marker.rawData.phone;
-                        const country = marker.rawData.country;
+                        // Construct content for InfoWindow dynamically
+                        const infoContent = document.createElement('div');
+                        infoContent.className = 'info-window-content';
 
-                        const infoContent = `
-                       <div class="info-window-content">
-                            <h3>${name}</h3>
-                            <p><strong>City:</strong> ${city}</p>
-                            <p><strong>Phone:</strong> ${phone}</p>
-                            <p><strong>Country:</strong> ${country}</p>
-                        </div>
-                `;
+                        // Assuming marker.rawData contains dynamic fields
+                        for (const [key, value] of Object.entries(marker.rawData)) {
+                            if (value) { // Only add fields with a value
+                                const paragraph = document.createElement('p');
+                                paragraph.innerHTML = `<strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}`;
+                                infoContent.appendChild(paragraph);
+                            }
+                        }
 
                         infowindow.setContent(infoContent); // Update content
                         infowindow.open(this.map, _marker); // Open the InfoWindow
                     });
+
 
                     return _marker;
                 } catch (error) {
