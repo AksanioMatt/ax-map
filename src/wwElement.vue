@@ -230,46 +230,36 @@ export default {
                         this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
                             ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                             : this.content.defaultMarkerUrl;
+
                     let _marker = new google.maps.Marker({
                         position: marker.position,
                         map: this.map,
                         icon: this.content.markersIcon
                             ? url
                                 ? {
-                                      url,
-                                      scaledSize:
-                                          !this.content.markersAutoSize && marker.width && marker.height
-                                              ? new google.maps.Size(marker.width, marker.height)
-                                              : !this.content.markersAutoSize &&
-                                                this.content.defaultMarkerWidth &&
-                                                this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
+                                    url,
+                                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                        ? new google.maps.Size(marker.width, marker.height)
+                                        : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                            ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                            : undefined,
+                                }
                                 : {
-                                      url: defaultMarkerUrl,
-                                      scaledSize:
-                                          !this.content.markersAutoSize &&
-                                          this.content.defaultMarkerWidth &&
-                                          this.content.defaultMarkerHeight
-                                              ? new google.maps.Size(
-                                                    this.content.defaultMarkerWidth,
-                                                    this.content.defaultMarkerHeight
-                                                )
-                                              : undefined,
-                                  }
+                                    url: defaultMarkerUrl,
+                                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                        : undefined,
+                                }
                             : {},
                         animation: google.maps.Animation.DROP,
                     });
 
                     this.markerInstances.push(_marker);
                     const infowindow = new google.maps.InfoWindow({
-                        content: marker.content,
+                        content: marker.content, // This will be overridden in click listener
                         maxWidth: 200,
                     });
+
                     _marker.addListener('mouseover', e => {
                         this.$emit('trigger-event', {
                             name: 'marker:mouseover',
@@ -279,6 +269,7 @@ export default {
                             infowindow.open(this.map, _marker);
                         }
                     });
+
                     _marker.addListener('mouseout', e => {
                         this.$emit('trigger-event', {
                             name: 'marker:mouseout',
@@ -288,15 +279,32 @@ export default {
                             infowindow.close();
                         }
                     });
+
                     _marker.addListener('click', e => {
                         this.$emit('trigger-event', {
                             name: 'marker:click',
                             event: { marker, domEvent: e.domEvent },
                         });
-                        if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
+
+                        // Construct content for InfoWindow
+                        const name = marker.rawData.name; // Adjust field names as necessary
+                        const city = marker.rawData.city; // Ensure these fields exist in your marker data
+                        const phone = marker.rawData.phone;
+                        const country = marker.rawData.country;
+
+                        const infoContent = `
+                       <div class="info-window-content">
+                            <h3>${name}</h3>
+                            <p><strong>City:</strong> ${city}</p>
+                            <p><strong>Phone:</strong> ${phone}</p>
+                            <p><strong>Country:</strong> ${country}</p>
+                        </div>
+                `;
+
+                        infowindow.setContent(infoContent); // Update content
+                        infowindow.open(this.map, _marker); // Open the InfoWindow
                     });
+
                     return _marker;
                 } catch (error) {
                     console.error(error);
@@ -315,7 +323,8 @@ export default {
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
-        },
+        }
+        ,
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
             const showMarkers = zoomLevel >= 15; // Change this value as needed
@@ -376,6 +385,7 @@ export default {
                 filter: blur(8px);
             }
         }
+
         .map-placeholder {
             z-index: 2;
             position: absolute;
@@ -426,6 +436,30 @@ export default {
                         transition: 0.3s;
                     }
                 }
+            }
+        }
+
+        .info-window-content {
+            font-family: Arial, sans-serif;
+            color: #333;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+
+            h3 {
+                margin: 0;
+                font-size: 1.2em;
+                color: #099af2; // Title color
+            }
+
+            p {
+                margin: 4px 0;
+                font-size: 0.9em;
+            }
+
+            strong {
+                color: #555; // Label color
             }
         }
     }
