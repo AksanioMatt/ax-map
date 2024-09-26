@@ -465,27 +465,32 @@ export default {
             defaultValue: true,
         },
         infoWindowFields: {
-            hidden: content => !content.infoWindowEnabled || !content.markers || content.markers.length === 0,
+            hidden: content => !content.infoWindowEnabled,
             label: {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'Array', // Allow multiple selections
-            options: content => {
-                if (!content.markers.length || typeof content.markers[0] !== 'object') {
-                    return null;
-                }
-                // Return the keys of the first marker's properties
-                return {
-                    options: Object.keys(content.markers[0]).map(key => ({
-                        value: key,
-                        label: key.charAt(0).toUpperCase() + key.slice(1) // Capitalize the label
-                    })),
-                };
+            type: 'Array', // Allows multiple selections
+            options: {
+                item: {
+                    type: 'ObjectPropertyPath',
+                    options: content => {
+                        if (!content.markers.length || typeof content.markers[0] !== 'object') {
+                            return null;
+                        }
+                        // Generate options based on marker fields
+                        return { object: content.markers[0] };
+                    },
+                    label: {
+                        en: 'Select field',
+                        fr: 'Sélectionner le champ',
+                    },
+                },
             },
-            defaultValue: [], // Default to an empty array
+            defaultValue: ['name'], // Set 'name' as the default selected field
             section: 'settings',
         },
+        
         
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
