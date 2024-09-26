@@ -5,7 +5,7 @@
                 <div class="placeholder-content">
                     If you want to use a Google map, you need to have a Google API Key. If you already have one, you can
                     add it in the map settings. <br /><br />
-                    Otherwise you can follow these instructions:
+                    Otherwise, you can follow these instructions:
                     <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                         <button>API Key documentation</button>
                     </a>
@@ -31,17 +31,11 @@ const DEFAULT_MARKER_HEIGHT_FIELD = 'height';
 
 export default {
     props: {
-        /* wwEditor:start */
         wwEditorState: { type: Object, required: true },
-        /* wwEditor:end */
         content: { type: Object, required: true },
         wwElementState: { type: Object, required: true },
     },
     emits: ['trigger-event', 'update:content:effect'],
-    setup() {
-        const markerInstances = [];
-        return { markerInstances };
-    },
     data() {
         return {
             map: null,
@@ -49,26 +43,18 @@ export default {
             wrongKey: false,
             observer: null,
             clusterer: null,
+            markerInstances: [],
         };
     },
     computed: {
         isEditing() {
-            /* wwEditor:start */
             return this.wwEditorState.editMode === wwLib.wwEditorHelper.EDIT_MODES.EDITION;
-            /* wwEditor:end */
-            return false;
         },
         isError() {
-            if (this.content && this.content.googleKey) {
-                return !this.isGoogleKeyMatch;
-            }
-            return true;
+            return !this.isGoogleKeyMatch || !this.content || !this.content.googleKey;
         },
         isGoogleKeyMatch() {
-            if (this.content.googleKey) {
-                return this.content.googleKey.match(/^(AIza[0-9A-Za-z-_]{35})$/);
-            }
-            return false;
+            return this.content.googleKey && this.content.googleKey.match(/^(AIza[0-9A-Za-z-_]{35})$/);
         },
         mapOptions() {
             return {
@@ -77,10 +63,9 @@ export default {
                     lng: parseFloat(this.content.lng || 0),
                 },
                 zoom: this.content.zoom,
-                styles:
-                    this.content.mapStyle === 'custom'
-                        ? JSON.parse(this.content.mapStyleJSON.code)
-                        : stylesConfig[this.content.mapStyle],
+                styles: this.content.mapStyle === 'custom'
+                    ? JSON.parse(this.content.mapStyleJSON.code)
+                    : stylesConfig[this.content.mapStyle],
                 mapTypeId: this.content.defaultMapType,
                 zoomControl: this.content.zoomControl,
                 scaleControl: this.content.scaleControl,
@@ -114,42 +99,10 @@ export default {
         },
     },
     watch: {
-        /* wwEditor:start */
         'content.googleKey'() {
             this.initMap();
         },
-        'content.markersIcon'() {
-            this.initMap();
-        },
-        'content.markersAutoSize'() {
-            this.initMap();
-        },
-        'content.defaultMarkerUrl'() {
-            this.initMap();
-        },
-        'content.defaultMarkerWidth'() {
-            this.initMap();
-        },
-        'content.defaultMarkerHeight'() {
-            this.initMap();
-        },
-        'content.zoom'(value) {
-            if (this.map) {
-                this.map.setZoom(value || 0);
-                this.updateMarkerVisibility();
-            }
-        },
-        'content.defaultMapType'(value) {
-            if (value === 'satellite') this.$emit('update:content:effect', { mapStyle: null });
-        },
-        'content.fixedBounds'(value) {
-            value ? this.setMapMarkerBounds() : this.initMap();
-        },
-        'wwEditorState.boundProps.markers'(isBind) {
-            if (!isBind) this.$emit('update:content:effect', { nameField: null, latField: null, lngField: null });
-        },
-        /* wwEditor:end */
-        markers() {
+        'content.markers'() {
             this.updateMapMarkers();
         },
         mapOptions() {
@@ -157,19 +110,13 @@ export default {
         },
     },
     mounted() {
-        // Ensure initMap is called after the DOM is fully rendered
         this.$nextTick(() => {
             this.initMap();
-
-            // Fixed bounds require the map to be visible
-            this.observer = new IntersectionObserver(
-                changes => {
-                    if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
-                        this.setMapMarkerBounds();
-                    }
-                },
-                { trackVisibility: true, delay: 100 }
-            );
+            this.observer = new IntersectionObserver(changes => {
+                if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
+                    this.setMapMarkerBounds();
+                }
+            }, { trackVisibility: true, delay: 100 });
             this.observer.observe(this.$refs.map);
         });
     },
@@ -199,125 +146,45 @@ export default {
             }
 
             try {
-                // Check if this.$refs.map is available
                 if (!this.$refs.map) {
                     console.error('Map element is not available');
                     return;
                 }
 
-                this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
+                this.map = new google.maps.Map(this.$refs.map, this.mapOptions);
                 this.map.addListener('click', mapsMouseEvent => {
-                    mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
-                    mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
                     this.$emit('trigger-event', {
                         name: 'map:click',
-                        event: { ...mapsMouseEvent },
+                        event: { lat: mapsMouseEvent.latLng.lat(), lng: mapsMouseEvent.latLng.lng() },
                     });
                 });
                 this.updateMapMarkers();
-                this.updateMarkerVisibility();
             } catch (error) {
-                wwLib.wwLog.error(error);
+                console.error('Map initialization error:', error);
             }
         },
         async updateMapMarkers() {
-            if (!this.markers || !this.loader) return;
+            if (!this.markers.length || !this.loader) return;
+
             if (this.clusterer) {
-                this.clusterer.clearMarkers(false);
-                this.clusterer = null; 
+                this.clusterer.clearMarkers();
+                this.clusterer = null; // Reset the clusterer
             }
 
-            for (const markerInstance of this.markerInstances) {
-                markerInstance.setMap(null);
-            }
-
+            this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
 
             const markersArray = this.markers.map(marker => {
-                try {
-                    const url =
-                        marker.url && marker.url.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                            : marker.url;
-                    const defaultMarkerUrl =
-                        this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                            : this.content.defaultMarkerUrl;
+                const icon = this.getMarkerIcon(marker);
+                const advancedMarker = new google.maps.marker.AdvancedMarkerElement({
+                    position: marker.position,
+                    content: this.createMarkerContent(marker),
+                    map: this.map,
+                    icon: icon,
+                });
 
-                    // Ensure the icon property is properly set
-                    const icon = this.content.markersIcon
-                        ? url
-                            ? {
-                                  url,
-                                  scaledSize:
-                                      !this.content.markersAutoSize && marker.width && marker.height
-                                          ? new google.maps.Size(marker.width, marker.height)
-                                          : !this.content.markersAutoSize &&
-                                            this.content.defaultMarkerWidth &&
-                                            this.content.defaultMarkerHeight
-                                          ? new google.maps.Size(
-                                                this.content.defaultMarkerWidth,
-                                                this.content.defaultMarkerHeight
-                                            )
-                                          : undefined,
-                              }
-                            : {
-                                  url: defaultMarkerUrl,
-                                  scaledSize:
-                                      !this.content.markersAutoSize &&
-                                      this.content.defaultMarkerWidth &&
-                                      this.content.defaultMarkerHeight
-                                          ? new google.maps.Size(
-                                                this.content.defaultMarkerWidth,
-                                                this.content.defaultMarkerHeight
-                                            )
-                                          : undefined,
-                              }
-                        : null; // Set to null if markersIcon is not provided
-
-                    let _marker = new google.maps.Marker({
-                        position: marker.position,
-                        map: this.map,
-                        icon: icon,
-                        animation: google.maps.Animation.DROP,
-                    });
-
-                    this.markerInstances.push(_marker);
-                    const infowindow = new google.maps.InfoWindow({
-                        content: marker.content,
-                        maxWidth: 200,
-                    });
-                    _marker.addListener('mouseover', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseover',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
-                    });
-                    _marker.addListener('mouseout', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseout',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover') {
-                            infowindow.close();
-                        }
-                    });
-                    _marker.addListener('click', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
-                    });
-                    return _marker;
-                } catch (error) {
-                    console.error(error);
-                }
+                this.markerInstances.push(advancedMarker);
+                return advancedMarker;
             });
 
             // Initialize MarkerClusterer with the markers
@@ -325,7 +192,7 @@ export default {
                 map: this.map,
                 markers: markersArray,
                 options: {
-                    minimumClusterSize: 2, 
+                    minimumClusterSize: 2,
                 },
             });
 
@@ -333,9 +200,27 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
+        createMarkerContent(marker) {
+            const div = document.createElement('div');
+            div.innerHTML = marker.content;
+            div.className = 'marker-content'; // Add a class for styling if needed
+            return div;
+        },
+        getMarkerIcon(marker) {
+            const url = marker.url && marker.url.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                : marker.url;
+
+            return {
+                url: url || this.content.defaultMarkerUrl,
+                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                    ? new google.maps.Size(marker.width, marker.height)
+                    : undefined,
+            };
+        },
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
-            const showMarkers = zoomLevel >= 15; // Change this value as needed
+            const showMarkers = zoomLevel >= 15;
 
             for (const marker of this.markerInstances) {
                 marker.setMap(showMarkers ? this.map : null);
@@ -343,18 +228,16 @@ export default {
         },
         setMapMarkerBounds() {
             if (!this.map || this.markers.length < 2) return;
-            const mapBounds = new google.maps.LatLngBounds();
-            for (const marker of this.markers) {
-                mapBounds.extend(marker.position);
-            }
-            this.map.fitBounds(mapBounds);
+            const bounds = new google.maps.LatLngBounds();
+            this.markers.forEach(marker => {
+                bounds.extend(marker.position);
+            });
+            this.map.fitBounds(bounds);
         },
-        /* wwEditor:start */
         getMarkerTestEvent() {
             if (!this.markers.length) throw new Error('No markers found');
             return { marker: this.markers[0], domEvent: { x: 128, y: 156, target: null } };
         },
-        /* wwEditor:end */
     },
 };
 </script>
@@ -379,71 +262,27 @@ export default {
         top: 0;
         left: 0;
 
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-        }
-
         .map {
             z-index: 1;
             height: 100%;
             width: 100%;
 
             &.error {
-                filter: blur(8px);
+                background-color: rgba(255, 0, 0, 0.1);
             }
         }
-        .map-placeholder {
-            z-index: 2;
-            position: absolute;
-            top: 0px;
-            left: 0px;
+    }
 
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+    .map-placeholder {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        text-align: center;
 
-            &.error {
-                background-color: rgba(0, 0, 0, 0.4);
-            }
-
-            .placeholder-content {
-                text-align: center;
-                width: 90%;
-                background: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 0.8em 1.2em;
-                border-radius: 12px;
-
-                .wrongKey {
-                    color: #f44336;
-                    padding: 10px;
-                }
-
-                button {
-                    margin-top: 20px;
-                    padding: 0.8em 1.2em;
-                    border: none;
-                    border-radius: 12px;
-                    background-color: #099af2;
-                    color: white;
-                    font-weight: 500;
-                    font-size: 1.1em;
-                    transition: 0.3s;
-
-                    &:hover {
-                        cursor: pointer;
-                        background-color: #077ac0;
-                        transition: 0.3s;
-                    }
-                }
-            }
+        &.error {
+            color: red;
         }
     }
 }
