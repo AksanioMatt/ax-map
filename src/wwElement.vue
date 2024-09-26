@@ -337,6 +337,7 @@ export default {
     }
 }
 
+
 ,
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
