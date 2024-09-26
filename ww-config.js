@@ -1,4 +1,10 @@
 export default {
+    // Maker icon (on/off)
+    // if (prev = on) Maker auto size (on/off)
+    // if Icon URL
+    // if (!auto) Icon width (d=50)
+    // if (!auto) Icon height (d=50)
+    // if (w||h not int) auto
     options: {
         sizable: true,
     },
@@ -27,6 +33,8 @@ export default {
                 'heightField',
                 'markerTooltipTrigger',
                 'fixedBounds',
+                'infoWindowEnabled', // Added for InfoWindow settings
+                'infoWindowFields',   // Added for InfoWindow fields
             ],
             [
                 'zoomControl',
@@ -263,14 +271,7 @@ export default {
             options: {
                 item: {
                     type: 'Object',
-                    defaultValue: {
-                        name: '',
-                        lat: 0,
-                        lng: 0,
-                        width: 40,
-                        height: 40,
-                        infoWindowContent: { city: '', country: '', phone: '' }, // Added structured infoWindowContent
-                    },
+                    defaultValue: { name: '', lat: 0, lng: 0, width: 40, height: 40 },
                     options: {
                         item: {
                             name: {
@@ -288,29 +289,6 @@ export default {
                                 type: 'Text',
                                 options: { placeholder: 'Longitude' },
                             },
-                            infoWindowContent: {
-                                type: 'Object',
-                                label: { en: 'Info Window Content' },
-                                options: {
-                                    item: {
-                                        city: {
-                                            type: 'Text',
-                                            label: { en: 'City' },
-                                            options: { placeholder: 'City Name' },
-                                        },
-                                        country: {
-                                            type: 'Text',
-                                            label: { en: 'Country' },
-                                            options: { placeholder: 'Country Name' },
-                                        },
-                                        phone: {
-                                            type: 'Text',
-                                            label: { en: 'Phone' },
-                                            options: { placeholder: 'Phone Number' },
-                                        },
-                                    },
-                                },
-                            },
                             url: {
                                 label: { en: 'Custom marker icon' },
                                 type: 'Image',
@@ -327,8 +305,7 @@ export default {
                                 type: 'Number',
                                 bindable: true,
                                 options: { min: 0, step: 1, defaultValue: 40 },
-                                hidden: (content, _sidepanelContent, boundProps) =>
-                                    !content.markersIcon || content.markersAutoSize,
+                                hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon || content.markersAutoSize,
                                 bindingValidation: {
                                     type: 'number',
                                     tooltip: 'A number that defines the width of the icon: `40`',
@@ -339,8 +316,7 @@ export default {
                                 type: 'Number',
                                 bindable: true,
                                 options: { min: 0, step: 1, defaultValue: 40 },
-                                hidden: (content, _sidepanelContent, boundProps) =>
-                                    !content.markersIcon || content.markersAutoSize,
+                                hidden: (content, _sidepanelContent, boundProps) => !content.markersIcon || content.markersAutoSize,
                                 bindingValidation: {
                                     type: 'number',
                                     tooltip: 'A number that defines the height of the icon: `40`',
@@ -351,8 +327,8 @@ export default {
                 },
             },
             defaultValue: [
-                { name: 'New York', lat: 40.712784, lng: -74.005941, infoWindowContent: { city: 'New York', country: 'USA', phone: '1234567890' } },
-                { name: 'Brooklyn', lat: 40.650002, lng: -73.949997, infoWindowContent: { city: 'Brooklyn', country: 'USA', phone: '0987654321' } },
+                { name: 'New York', lat: 40.712784, lng: -74.005941 },
+                { name: 'Brooklyn', lat: 40.650002, lng: -73.949997 },
             ],
             bindingValidation: {
                 type: 'array',
@@ -481,6 +457,28 @@ export default {
             type: 'OnOff',
             section: 'settings',
             defaultValue: true,
+        },
+        infoWindowEnabled: {
+            label: { en: 'Enable InfoWindow', fr: 'Activer InfoWindow' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: true,
+        },
+        infoWindowFields: {
+            hidden: content => !content.infoWindowEnabled,
+            label: {
+                en: 'InfoWindow fields',
+                fr: 'Champs InfoWindow',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.markers.length || typeof content.markers[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.markers[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
         },
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
