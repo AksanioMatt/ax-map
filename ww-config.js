@@ -470,19 +470,22 @@ export default {
                 en: 'InfoWindow fields',
                 fr: 'Champs InfoWindow',
             },
-            type: 'ObjectPropertyPath', // Allow selecting multiple fields
+            type: 'Array', // Allow multiple selections
             options: content => {
                 if (!content.markers.length || typeof content.markers[0] !== 'object') {
                     return null;
                 }
-                // Return the first marker's properties as options
+                // Return the keys of the first marker's properties
                 return {
-                    object: content.markers[0],
+                    options: Object.keys(content.markers[0]).map(key => ({
+                        value: key,
+                        label: key.charAt(0).toUpperCase() + key.slice(1) // Capitalize the label
+                    })),
                 };
             },
-            defaultValue: [], // Set default to an empty array
+            defaultValue: [], // Default to an empty array
             section: 'settings',
-        },        
+        },
         
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
