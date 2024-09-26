@@ -359,7 +359,6 @@ export default {
     },
 };
 </script>
-
 <style lang="scss" scoped>
 .ww-map {
     position: relative;

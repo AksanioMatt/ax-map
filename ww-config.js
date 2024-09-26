@@ -410,6 +410,7 @@ export default {
             defaultValue: null,
             section: 'settings',
         },
+        
         widthField: {
             hidden: (content, sidepanelContent, boundProps) =>
                 !boundProps.markers || !content.markers || !content.markersIcon || content.markersAutoSize,
