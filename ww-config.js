@@ -495,7 +495,7 @@ export default {
                     },
                 },
             },
-            defaultValue: ['name'], // Default selected field
+            defaultValue: [], // Default selected field
             section: 'settings',
         },
         
