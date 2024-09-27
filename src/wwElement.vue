@@ -101,7 +101,7 @@ export default {
         },
     },
     watch: {
-        'content.googleKey': 'initMap',
+        'content.googleKey': 'reloadMap',
         'content.markers': 'updateMapMarkers',
         'content.zoom'(value) {
             if (this.map) {
@@ -128,6 +128,11 @@ export default {
         this.observer.disconnect();
     },
     methods: {
+        reloadMap() {
+            this.clearOldMarkers();
+            this.map = null; // Clear the existing map instance
+            this.initMap(); // Reinitialize the map
+        },
         async initMap() {
             const { googleKey } = this.content;
             if (!this.isGoogleKeyMatch) {
