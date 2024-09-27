@@ -80,13 +80,22 @@ export default {
         markers() {
             const fields = {
                 name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
-                lat: this.content.latField || DEFAULT_MARKER_FIELDS.lat,
-                lng: this.content.lngField || DEFAULT_MARKER_FIELDS.lng,
+                lat: this.content.latitudeField || this.content.latField || DEFAULT_MARKER_FIELDS.lat,
+                lng: this.content.longitudeField || this.content.lngField || DEFAULT_MARKER_FIELDS.lng,
                 url: this.content.urlField || DEFAULT_MARKER_FIELDS.url,
                 width: this.content.widthField || DEFAULT_MARKER_FIELDS.width,
                 height: this.content.heightField || DEFAULT_MARKER_FIELDS.height,
+                city: this.content.cityField || 'city',
+                country: this.content.countryField || 'country',
+                ownershipType: this.content.ownershipTypeField || 'ownershipType',
+                facilityType: this.content.facilityTypeField || 'facilityType',
+                phone: this.content.phoneNumberField || 'phone',
+                address: this.content.addressField || 'address',
+                infoWindowEnabled: this.content.infoWindowEnabled || false,
             };
+
             if (!Array.isArray(this.content.markers)) return [];
+
             return this.content.markers.map(marker => ({
                 content: wwLib.resolveObjectPropertyPath(marker, fields.name),
                 position: {
@@ -97,6 +106,13 @@ export default {
                 url: wwLib.resolveObjectPropertyPath(marker, fields.url),
                 width: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.width) || 0),
                 height: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.height) || 0),
+                city: wwLib.resolveObjectPropertyPath(marker, fields.city),
+                country: wwLib.resolveObjectPropertyPath(marker, fields.country),
+                ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
+                facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
+                phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
+                address: wwLib.resolveObjectPropertyPath(marker, fields.address),
+                infoWindowEnabled: fields.infoWindowEnabled,
             }));
         },
     },
@@ -172,12 +188,8 @@ export default {
                 });
 
                 this.markerInstances.push(_marker);
-                
-                // Create the InfoWindow content based on infoWindowFields
-                const infoContent = this.createInfoWindowContent(marker.rawData);
 
                 const infowindow = new google.maps.InfoWindow({
-                    content: infoContent,
                     maxWidth: 200,
                 });
 
@@ -187,6 +199,7 @@ export default {
                         event: { marker, domEvent: e.domEvent },
                     });
                     if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                        infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                         infowindow.open(this.map, _marker);
                     }
                 });
@@ -206,6 +219,7 @@ export default {
                         name: 'marker:click',
                         event: { marker, domEvent: e.domEvent },
                     });
+                    infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                     infowindow.open(this.map, _marker);
                 });
 
@@ -238,13 +252,12 @@ export default {
                 country: this.content.countryField || 'country',
                 ownershipType: this.content.ownershipTypeField || 'ownershipType',
                 facilityType: this.content.facilityTypeField || 'facilityType',
-                nonFacility: rawData.nonFacility || false,
             };
 
             // Start constructing the InfoWindow content
             let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
 
-            // Add fields if they exist in rawData
+            // Check for each field and add it to content if it exists in rawData
             if (rawData[fields.city]) {
                 content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
             }
@@ -261,12 +274,8 @@ export default {
                 content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
             }
 
-            // Check for non-facility status
-            if (fields.nonFacility) {
-                content += '<p><strong>Type:</strong> Non-Facility</p>';
-            }
-
-            content += '</div>'; // Close the info window content div
+            // Close the info window content div
+            content += '</div>';
             return content;
         },
         setupMarkerEvents(marker, markerData) {
@@ -309,24 +318,29 @@ export default {
     height: 100%;
     overflow: hidden;
 }
+
 .map-container {
     position: absolute;
     width: 100%;
     height: 100%;
 }
+
 .map {
     width: 100%;
     height: 100%;
 }
+
 .map-placeholder {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
 }
+
 .error {
     color: red;
 }
+
 .wrongKey {
     color: orange;
 }
