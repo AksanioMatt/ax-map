@@ -159,96 +159,113 @@ export default {
             }
         },
         async updateMapMarkers() {
-            // Clear previous markers and clusterer
-            this.clearOldMarkers();
+    // Clear previous markers and clusterer
+    this.clearOldMarkers();
 
-            if (!this.markers.length) return;
+    if (!this.markers.length) return;
 
-            const markersArray = this.markers.map(marker => {
-                const url = marker.url && marker.url.startsWith('designs/')
-                    ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                    : marker.url;
+    // Create a new markers array
+    const markersArray = this.markers.map(marker => {
+        const url = marker.url && marker.url.startsWith('designs/')
+            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+            : marker.url;
 
-                const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                    ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                    : this.content.defaultMarkerUrl;
-                    let icon = null;
-                    if (this.content.markersIcon) {
-                        icon = url ? {
-                            url,
-                            scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                ? new google.maps.Size(marker.width, marker.height)
-                                : undefined,
-                        } : {
-                            url: defaultMarkerUrl,
-                            scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                : undefined,
-                        };
-                    }
-                const _marker = new google.maps.Marker({
-                    position: marker.position,
-                    map: this.map,
-                    icon: icon || undefined,
-                    animation: google.maps.Animation.DROP,
-                });
+        const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+            : this.content.defaultMarkerUrl;
 
-                this.markerInstances.push(_marker);
-                const infowindow = new google.maps.InfoWindow({
-                    content: marker.content,
-                    maxWidth: 200,
-                });
-                _marker.addListener('mouseover', e => {
-                    this.$emit('trigger-event', {
-                        name: 'marker:mouseover',
-                        event: { marker, domEvent: e.domEvent },
-                    });
-                    if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                        infowindow.open(this.map, _marker);
-                    }
-                });
-                _marker.addListener('mouseout', e => {
-                    this.$emit('trigger-event', {
-                        name: 'marker:mouseout',
-                        event: { marker, domEvent: e.domEvent },
-                    });
-                    if (this.content.markerTooltipTrigger === 'hover') {
-                        infowindow.close();
-                    }
-                });
-                _marker.addListener('click', e => {
-                    this.$emit('trigger-event', {
-                        name: 'marker:click',
-                        event: { marker, domEvent: e.domEvent },
-                    });
-                    if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                        infowindow.open(this.map, _marker);
-                    }
-                });
+        let icon = null;
+        if (this.content.markersIcon) {
+            icon = url ? {
+                url,
+                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                    ? new google.maps.Size(marker.width, marker.height)
+                    : undefined,
+            } : {
+                url: defaultMarkerUrl,
+                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                    : undefined,
+            };
+        }
 
-                return _marker;
+        const _marker = new google.maps.Marker({
+            position: marker.position,
+            map: this.map,
+            icon: icon || undefined,
+            animation: google.maps.Animation.DROP,
+        });
+
+        this.markerInstances.push(_marker);
+        const infowindow = new google.maps.InfoWindow({
+            content: marker.content,
+            maxWidth: 200,
+        });
+
+        _marker.addListener('mouseover', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:mouseover',
+                event: { marker, domEvent: e.domEvent },
             });
+            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                infowindow.open(this.map, _marker);
+            }
+        });
 
-            // Initialize MarkerClusterer with the new markers
-            this.clusterer = new MarkerClusterer({
-                map: this.map,
-                markers: markersArray,
-                options: { minimumClusterSize: 2 },
+        _marker.addListener('mouseout', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:mouseout',
+                event: { marker, domEvent: e.domEvent },
             });
+            if (this.content.markerTooltipTrigger === 'hover') {
+                infowindow.close();
+            }
+        });
 
-            if (this.content.fixedBounds) {
-                this.setMapMarkerBounds();
+        _marker.addListener('click', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:click',
+                event: { marker, domEvent: e.domEvent },
+            });
+            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
+                infowindow.open(this.map, _marker);
             }
-        },
-        clearOldMarkers() {
-            // Remove existing markers from the map and reset arrays
-            this.markerInstances.forEach(marker => marker.setMap(null));
-            this.markerInstances = [];
-            if (this.clusterer) {
-                this.clusterer.setMap(null); // Remove clusterer from map
-                this.clusterer = null; // Reset clusterer
-            }
-        },
+        });
+
+        return _marker;
+    });
+
+    // Clear existing clusterer if it exists
+    if (this.clusterer) {
+        this.clusterer.clearMarkers();
+    }
+
+    // Initialize MarkerClusterer with the new markers
+    this.clusterer = new MarkerClusterer({
+        map: this.map,
+        markers: markersArray,
+        options: { minimumClusterSize: 2 },
+    });
+
+    if (this.content.fixedBounds) {
+        this.setMapMarkerBounds();
+    }
+},
+
+clearOldMarkers() {
+    // Clear the existing markers from the map
+    for (const marker of this.markerInstances) {
+        marker.setMap(null);
+    }
+    this.markerInstances = [];
+
+    // Clear the existing clusterer if it exists
+    if (this.clusterer) {
+        this.clusterer.clearMarkers();
+        this.clusterer = null; // Remove reference to old clusterer
+    }
+},
+
         updateMarkerVisibility() {
             const zoomLevel = this.map.getZoom();
             const showMarkers = zoomLevel >= 15; // Adjust visibility threshold as needed
