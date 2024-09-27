@@ -466,21 +466,93 @@ export default {
             defaultValue: true,
         },
         infoWindowFields: {
-            hidden: content => !content.infoWindowEnabled,
-            label: {
-                en: 'InfoWindow fields',
-                fr: 'Champs InfoWindow',
-            },
-            type: 'ObjectPropertyPath',
-            options: content => {
-                if (!content.markers.length || typeof content.markers[0] !== 'object') {
-                    return null;
-                }
-                return { object: content.markers[0] };
-            },
-            defaultValue: null,
             section: 'settings',
+            label: { en: 'InfoWindow Fields', fr: 'Champs InfoWindow' },
+            bindable: true,
+            type: 'Array',
+            options: {
+                item: {
+                    type: 'Object',
+                    defaultValue: { id: 187, city: '', country: '', ownershipType: '', facilityType: '', latLng: '', primaryFacility: false, duplicateFacility: false, nonFacility: false },
+                    options: {
+                        item: {
+                            id: {
+                                label: { en: 'ID', fr: 'ID' },
+                                type: 'Number',
+                                bindable: true,
+                                options: { defaultValue: 187 },
+                                hidden: true, // Hidden if not needed in the editor
+                            },
+                            city: {
+                                label: { en: 'City', fr: 'Ville' },
+                                type: 'Text',
+                                options: { placeholder: 'City Name' },
+                            },
+                            country: {
+                                label: { en: 'Country', fr: 'Pays' },
+                                type: 'Text',
+                                options: { placeholder: 'Country Name' },
+                            },
+                            ownershipType: {
+                                label: { en: 'Ownership Type', fr: 'Type de propriété' },
+                                type: 'TextSelect',
+                                options: {
+                                    options: [
+                                        { value: 'MoH', label: 'Ministry of Health' },
+                                        { value: 'Private', label: 'Private' },
+                                        { value: 'NGO', label: 'NGO' },
+                                        // Add more options as needed
+                                    ],
+                                },
+                            },
+                            facilityType: {
+                                label: { en: 'Facility Type', fr: 'Type d\'établissement' },
+                                type: 'Text',
+                                options: { placeholder: 'Facility Type' },
+                            },
+                            latLng: {
+                                label: { en: 'LatLng', fr: 'LatLng' },
+                                type: 'Text',
+                                options: { placeholder: 'Latitude, Longitude' },
+                            },
+                            primaryFacility: {
+                                label: { en: 'Primary Facility?', fr: 'Établissement principal?' },
+                                type: 'OnOff',
+                                defaultValue: false,
+                            },
+                            duplicateFacility: {
+                                label: { en: 'Duplicate Facility?', fr: 'Établissement dupliqué?' },
+                                type: 'OnOff',
+                                defaultValue: false,
+                            },
+                            nonFacility: {
+                                label: { en: 'Non-Facility', fr: 'Non-établissement' },
+                                type: 'OnOff',
+                                defaultValue: false,
+                            },
+                        },
+                    },
+                },
+            },
+            defaultValue: [
+                {
+                    id: 187,
+                    city: 'Boucle du Mouhoun',
+                    country: 'Burkina Faso',
+                    ownershipType: 'MoH',
+                    facilityType: 'Centre Hospitalier Régional',
+                    latLng: '12.4608,-3.4653',
+                    primaryFacility: false,
+                    duplicateFacility: false,
+                    nonFacility: false,
+                },
+            ],
+            bindingValidation: {
+                type: 'array',
+                tooltip: 'A collection of InfoWindow field data in array format: \n\n `[{}, {}, ...]`',
+            },
         },
+        
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
             type: 'OnOff',

@@ -172,53 +172,43 @@ export default {
                 });
 
                 this.markerInstances.push(_marker);
+                
+                // Create the InfoWindow content based on infoWindowFields
+                const infoContent = this.createInfoWindowContent(marker.rawData);
+
                 const infowindow = new google.maps.InfoWindow({
-                content: marker.content,
-                maxWidth: 200,
-            });
-
-            _marker.addListener('mouseover', e => {
-                this.$emit('trigger-event', {
-                    name: 'marker:mouseover',
-                    event: { marker, domEvent: e.domEvent },
+                    content: infoContent,
+                    maxWidth: 200,
                 });
-                if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+
+                _marker.addListener('mouseover', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:mouseover',
+                        event: { marker, domEvent: e.domEvent },
+                    });
+                    if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                        infowindow.open(this.map, _marker);
+                    }
+                });
+
+                _marker.addListener('mouseout', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:mouseout',
+                        event: { marker, domEvent: e.domEvent },
+                    });
+                    if (this.content.markerTooltipTrigger === 'hover') {
+                        infowindow.close();
+                    }
+                });
+
+                _marker.addListener('click', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:click',
+                        event: { marker, domEvent: e.domEvent },
+                    });
                     infowindow.open(this.map, _marker);
-                }
-            });
-
-            _marker.addListener('mouseout', e => {
-                this.$emit('trigger-event', {
-                    name: 'marker:mouseout',
-                    event: { marker, domEvent: e.domEvent },
-                });
-                if (this.content.markerTooltipTrigger === 'hover') {
-                    infowindow.close();
-                }
-            });
-
-            _marker.addListener('click', e => {
-                this.$emit('trigger-event', {
-                    name: 'marker:click',
-                    event: { marker, domEvent: e.domEvent },
                 });
 
-                const name = marker.rawData.name;
-                const city = marker.rawData.city;
-                const phone = marker.rawData.phone_number;
-                const country = marker.rawData.country;
-
-                const infoContent = `
-                    <div class="info-window-content">
-                        <h3>${name}</h3>
-                        <p><strong>City:</strong> ${city}</p>
-                        <p><strong>Phone:</strong> ${phone}</p>
-                        <p><strong>Country:</strong> ${country}</p>
-                    </div>
-                `;
-                infowindow.setContent(infoContent);
-                infowindow.open(this.map, _marker);
-            });
                 this.setupMarkerEvents(_marker, marker);
                 return _marker;
             });
@@ -235,6 +225,30 @@ export default {
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
+        },
+        createInfoWindowContent(rawData) {
+            const fields = {
+                name: this.content.infoWindowFields ? this.content.infoWindowFields[0].name : '',
+                city: this.content.infoWindowFields ? this.content.infoWindowFields[0].city : '',
+                phone: this.content.infoWindowFields ? this.content.infoWindowFields[0].phone : '',
+                country: this.content.infoWindowFields ? this.content.infoWindowFields[0].country : '',
+                nonFacility: this.content.infoWindowFields ? this.content.infoWindowFields[0].nonFacility : false,
+            };
+
+            // Check if non-facility is selected
+            const nonFacilityText = fields.nonFacility
+                ? '<p><strong>Type:</strong> Non-Facility</p>'
+                : '';
+
+            return `
+                <div class="info-window-content">
+                    <h3>${rawData[fields.name] || 'Unknown'}</h3>
+                    <p><strong>City:</strong> ${rawData[fields.city] || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${rawData[fields.phone] || 'N/A'}</p>
+                    <p><strong>Country:</strong> ${rawData[fields.country] || 'N/A'}</p>
+                    ${nonFacilityText}
+                </div>
+            `;
         },
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {
