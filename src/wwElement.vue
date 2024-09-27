@@ -202,6 +202,7 @@ export default {
             maxWidth: 200,
         });
 
+        // Event listeners for marker interactions
         _marker.addListener('mouseover', e => {
             this.$emit('trigger-event', {
                 name: 'marker:mouseover',
@@ -237,15 +238,17 @@ export default {
 
     // Clear existing clusterer if it exists
     if (this.clusterer) {
-        this.clusterer.clearMarkers();
+        this.clusterer.clearMarkers();  // Clear markers from clusterer
+        this.clusterer = null;           // Remove reference to old clusterer
     }
 
     // Initialize MarkerClusterer with the new markers
-    this.clusterer = new MarkerClusterer({
-        map: this.map,
-        markers: markersArray,
-        options: { minimumClusterSize: 2 },
+    this.clusterer = new MarkerClusterer(this.map, markersArray, {
+        minimumClusterSize: 2,
     });
+
+    // Force the map to refresh
+    google.maps.event.trigger(this.map, 'resize');
 
     if (this.content.fixedBounds) {
         this.setMapMarkerBounds();
