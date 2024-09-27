@@ -137,12 +137,10 @@ export default {
             }
             this.wrongKey = false;
             if (!googleKey.length) return;
-
             if (!this.loader) {
                 this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
                 await this.loader.load();
             }
-
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
                 this.updateMapMarkers(); // Ensure markers are updated on map initialization
@@ -151,7 +149,7 @@ export default {
             }
         },
         async updateMapMarkers() {
-            this.clearOldMarkers();
+            this.clearOldMarkers(); // Clear everything before adding new markers
             if (!this.markers.length) return;
 
             const markersArray = this.markers.map(marker => {
@@ -175,8 +173,11 @@ export default {
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
             }
-
-            this.clusterer = new MarkerClusterer(this.map, markersArray, { minimumClusterSize: 2 });
+            this.clusterer = new MarkerClusterer({
+                map: this.map,
+                markers: markersArray,
+                options: { minimumClusterSize: 2 },
+            });
 
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
@@ -191,11 +192,13 @@ export default {
             });
         },
         clearOldMarkers() {
+            // Remove old markers from the map
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
+            // Reset the clusterer to avoid old clusters being rendered
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
-                this.clusterer = null; // Clear reference
+                this.clusterer = null;
             }
         },
         setMapMarkerBounds() {
@@ -208,6 +211,8 @@ export default {
     },
 };
 </script>
+
+
 
 <style scoped>
 .ww-map {
