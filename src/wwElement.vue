@@ -242,7 +242,6 @@ export default {
         this.clusterer = null;           // Remove reference to old clusterer
     }
 
-    // Initialize MarkerClusterer with the new markers
     this.clusterer = new MarkerClusterer(this.map, markersArray, {
         minimumClusterSize: 2,
     });
@@ -256,7 +255,6 @@ export default {
 },
 
 clearOldMarkers() {
-    // Clear the existing markers from the map
     for (const marker of this.markerInstances) {
         marker.setMap(null);
     }
