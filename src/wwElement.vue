@@ -38,9 +38,6 @@ export default {
         wwElementState: { type: Object, required: true },
     },
     emits: ['trigger-event', 'update:content:effect'],
-    setup() {
-        return { markerInstances: [] };
-    },
     data() {
         return {
             map: null,
@@ -48,6 +45,7 @@ export default {
             wrongKey: false,
             observer: null,
             clusterer: null,
+            markerInstances: [],
         };
     },
     computed: {
@@ -104,11 +102,7 @@ export default {
     },
     watch: {
         'content.googleKey': 'initMap',
-        'content.markersIcon': 'initMap',
-        'content.markersAutoSize': 'initMap',
-        'content.defaultMarkerUrl': 'initMap',
-        'content.defaultMarkerWidth': 'initMap',
-        'content.defaultMarkerHeight': 'initMap',
+        'content.markers': 'updateMapMarkers', // Update markers when content changes
         'content.zoom'(value) {
             if (this.map) {
                 this.map.setZoom(value || 0);
@@ -120,15 +114,6 @@ export default {
         },
         'content.fixedBounds'(value) {
             value ? this.setMapMarkerBounds() : this.initMap();
-        },
-        'wwEditorState.boundProps.markers'(isBind) {
-            if (!isBind) this.$emit('update:content:effect', { nameField: null, latField: null, lngField: null });
-        },
-        markers() {
-            this.updateMapMarkers();
-        },
-        mapOptions() {
-            this.initMap();
         },
     },
     mounted() {
@@ -147,7 +132,7 @@ export default {
         async initMap() {
             const { googleKey } = this.content;
             if (!this.isGoogleKeyMatch) {
-                if (googleKey && googleKey.length) this.wrongKey = true;
+                this.wrongKey = googleKey && googleKey.length ? true : false;
                 setTimeout(() => { this.wrongKey = false; }, 8000);
                 return;
             }
@@ -167,96 +152,107 @@ export default {
                         event: { ...mapsMouseEvent },
                     });
                 });
-                this.updateMapMarkers();
+                this.updateMapMarkers(); // Ensure markers are updated on map initialization
                 this.updateMarkerVisibility();
             } catch (error) {
                 wwLib.wwLog.error(error);
             }
         },
         async updateMapMarkers() {
-            if (!this.markers || !this.loader) return;
-            this.markerInstances.forEach(marker => marker.setMap(null));
-            this.markerInstances = [];
+            // Clear previous markers and clusterer
+            this.clearOldMarkers();
+
+            if (!this.markers.length) return;
+
             const markersArray = this.markers.map(marker => {
-                try {
-                    const url = marker.url && marker.url.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                        : marker.url;
-                    const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                        ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                        : this.content.defaultMarkerUrl;
+                const url = marker.url && marker.url.startsWith('designs/')
+                    ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                    : marker.url;
 
-                    const _marker = new google.maps.Marker({
-                        position: marker.position,
-                        map: this.map,
-                        icon: this.content.markersIcon
-                            ? url
-                                ? {
-                                    url,
-                                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                        ? new google.maps.Size(marker.width, marker.height)
-                                        : !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                            ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                            : undefined,
-                                }
-                                : {
-                                    url: defaultMarkerUrl,
-                                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                        : undefined,
-                                }
-                            : {},
-                        animation: google.maps.Animation.DROP,
-                    });
+                const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                    ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                    : this.content.defaultMarkerUrl;
 
-                    this.markerInstances.push(_marker);
-                    const infowindow = new google.maps.InfoWindow({
-                        content: marker.content,
-                        maxWidth: 200,
+                const _marker = new google.maps.Marker({
+                    position: marker.position,
+                    map: this.map,
+                    icon: this.content.markersIcon
+                        ? url
+                            ? {
+                                url,
+                                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                    ? new google.maps.Size(marker.width, marker.height)
+                                    : undefined,
+                            }
+                            : {
+                                url: defaultMarkerUrl,
+                                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                    : undefined,
+                            }
+                        : {},
+                    animation: google.maps.Animation.DROP,
+                });
+
+                this.markerInstances.push(_marker);
+                const infowindow = new google.maps.InfoWindow({
+                    content: marker.content,
+                    maxWidth: 200,
+                });
+                _marker.addListener('mouseover', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:mouseover',
+                        event: { marker, domEvent: e.domEvent },
                     });
-                    _marker.addListener('mouseover', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseover',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
+                    if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                        infowindow.open(this.map, _marker);
+                    }
+                });
+                _marker.addListener('mouseout', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:mouseout',
+                        event: { marker, domEvent: e.domEvent },
                     });
-                    _marker.addListener('mouseout', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:mouseout',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'hover') {
-                            infowindow.close();
-                        }
+                    if (this.content.markerTooltipTrigger === 'hover') {
+                        infowindow.close();
+                    }
+                });
+                _marker.addListener('click', e => {
+                    this.$emit('trigger-event', {
+                        name: 'marker:click',
+                        event: { marker, domEvent: e.domEvent },
                     });
-                    _marker.addListener('click', e => {
-                        this.$emit('trigger-event', {
-                            name: 'marker:click',
-                            event: { marker, domEvent: e.domEvent },
-                        });
-                        if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                            infowindow.open(this.map, _marker);
-                        }
-                    });
-                    return _marker;
-                } catch (error) {
-                    console.error(error);
-                }
+                    if (this.content.markerTooltipTrigger === 'click' && marker.content) {
+                        infowindow.open(this.map, _marker);
+                    }
+                });
+
+                return _marker;
             });
+
+            // Initialize MarkerClusterer with the new markers
             this.clusterer = new MarkerClusterer({
                 map: this.map,
                 markers: markersArray,
                 options: { minimumClusterSize: 2 },
             });
+
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
         },
+        clearOldMarkers() {
+            // Remove existing markers from the map and reset arrays
+            this.markerInstances.forEach(marker => marker.setMap(null));
+            this.markerInstances = [];
+            if (this.clusterer) {
+                this.clusterer.setMap(null); // Remove clusterer from map
+                this.clusterer = null; // Reset clusterer
+            }
+        },
         updateMarkerVisibility() {
-            const showMarkers = this.map.getZoom() >= 15;
+            const zoomLevel = this.map.getZoom();
+            const showMarkers = zoomLevel >= 15; // Adjust visibility threshold as needed
             this.markerInstances.forEach(marker => {
                 marker.setMap(showMarkers ? this.map : null);
             });
@@ -264,9 +260,7 @@ export default {
         setMapMarkerBounds() {
             if (!this.map || this.markers.length < 2) return;
             const mapBounds = new google.maps.LatLngBounds();
-            this.markers.forEach(marker => {
-                mapBounds.extend(marker.position);
-            });
+            this.markers.forEach(marker => mapBounds.extend(marker.position));
             this.map.fitBounds(mapBounds);
         },
         getMarkerTestEvent() {
@@ -285,23 +279,28 @@ export default {
     overflow: hidden;
     padding: 20%;
     pointer-events: initial;
+
     &.inactive {
         pointer-events: none;
     }
+
     .map-container {
         position: absolute;
         width: 100%;
         height: 100%;
         top: 0;
         left: 0;
+
         .map {
             z-index: 1;
             height: 100%;
             width: 100%;
+
             &.error {
                 filter: blur(8px);
             }
         }
+
         .map-placeholder {
             z-index: 2;
             position: absolute;
@@ -313,9 +312,11 @@ export default {
             flex-direction: column;
             align-items: center;
             justify-content: center;
+
             &.error {
                 background-color: rgba(0, 0, 0, 0.4);
             }
+
             .placeholder-content {
                 text-align: center;
                 width: 90%;
@@ -326,10 +327,12 @@ export default {
                 justify-content: center;
                 padding: 0.8em 1.2em;
                 border-radius: 12px;
+
                 .wrongKey {
                     color: #f44336;
                     padding: 10px;
                 }
+
                 button {
                     margin-top: 20px;
                     padding: 0.8em 1.2em;
@@ -340,6 +343,7 @@ export default {
                     font-weight: 500;
                     font-size: 1.1em;
                     transition: 0.3s;
+
                     &:hover {
                         cursor: pointer;
                         background-color: #077ac0;
