@@ -172,6 +172,53 @@ export default {
                 });
 
                 this.markerInstances.push(_marker);
+                const infowindow = new google.maps.InfoWindow({
+                content: marker.content,
+                maxWidth: 200,
+            });
+
+            _marker.addListener('mouseover', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseover',
+                    event: { marker, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                    infowindow.open(this.map, _marker);
+                }
+            });
+
+            _marker.addListener('mouseout', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseout',
+                    event: { marker, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover') {
+                    infowindow.close();
+                }
+            });
+
+            _marker.addListener('click', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:click',
+                    event: { marker, domEvent: e.domEvent },
+                });
+
+                const name = marker.rawData.name;
+                const city = marker.rawData.city;
+                const phone = marker.rawData.phone_number;
+                const country = marker.rawData.country;
+
+                const infoContent = `
+                    <div class="info-window-content">
+                        <h3>${name}</h3>
+                        <p><strong>City:</strong> ${city}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        <p><strong>Country:</strong> ${country}</p>
+                    </div>
+                `;
+                infowindow.setContent(infoContent);
+                infowindow.open(this.map, _marker);
+            });
                 this.setupMarkerEvents(_marker, marker);
                 return _marker;
             });
