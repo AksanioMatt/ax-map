@@ -240,44 +240,44 @@ export default {
             }
         },
         createInfoWindowContent(rawData) {
-            console.log("Saaalekuuuuuu", rawData)
-            if (!this.content.infoWindowEnabled) {
-                return ''; // Return empty string if InfoWindow is not enabled
-            }
+    if (!this.content.infoWindowEnabled) {
+        return ''; // Return empty string if InfoWindow is not enabled
+    }
 
-            const fields = {
-                name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
-                city: this.content.cityField || 'city',
-                phone: this.content.phoneField || 'phone',
-                country: this.content.countryField || 'country',
-                ownershipType: this.content.ownershipTypeField || 'ownershipType',
-                facilityType: this.content.facilityTypeField || 'facilityType',
-            };
- console.log(fields.name, fields.city, "chgeclikhihqgd   gtdfo8gtdgde8ide8icd", fields)
-            // Start constructing the InfoWindow content
-            let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
+    const fields = {
+        name: Array.isArray(this.content.nameField) ? this.content.nameField[0] : null,
+        city: Array.isArray(this.content.cityField) ? this.content.cityField[0] : null,
+        phone: Array.isArray(this.content.phoneField) ? this.content.phoneField[0] : null,
+        country: Array.isArray(this.content.countryField) ? this.content.countryField[0] : null,
+        ownershipType: Array.isArray(this.content.ownershipTypeField) ? this.content.ownershipTypeField[0] : null,
+        facilityType: Array.isArray(this.content.facilityTypeField) ? this.content.facilityTypeField[0] : null,
+    };
 
-            // Check for each field and add it to content if it exists in rawData
-            if (rawData[fields.city]) {
-                content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
-            }
-            if (rawData[fields.phone]) {
-                content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
-            }
-            if (rawData[fields.country]) {
-                content += `<p><strong>Country:</strong> ${rawData[fields.country]}</p>`;
-            }
-            if (rawData[fields.ownershipType]) {
-                content += `<p><strong>Ownership Type:</strong> ${rawData[fields.ownershipType]}</p>`;
-            }
-            if (rawData[fields.facilityType]) {
-                content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
-            }
+    // Start constructing the InfoWindow content
+    let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
 
-            // Close the info window content div
-            content += '</div>';
-            return content;
-        },
+    // Check for each field and add it to content if it exists in rawData
+    if (fields.city && rawData[fields.city]) {
+        content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
+    }
+    if (fields.phone && rawData[fields.phone]) {
+        content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
+    }
+    if (fields.country && rawData[fields.country]) {
+        content += `<p><strong>Country:</strong> ${rawData[fields.country]}</p>`;
+    }
+    if (fields.ownershipType && rawData[fields.ownershipType]) {
+        content += `<p><strong>Ownership Type:</strong> ${rawData[fields.ownershipType]}</p>`;
+    }
+    if (fields.facilityType && rawData[fields.facilityType]) {
+        content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
+    }
+
+    // Close the info window content div
+    content += '</div>';
+    return content;
+},
+
 
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {
