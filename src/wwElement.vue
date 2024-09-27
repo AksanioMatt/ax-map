@@ -255,13 +255,14 @@ export default {
         facilityType: Array.isArray(this.content.facilityTypeField) ? String(this.content.facilityTypeField[0]) : null,
     };
     console.log(fields,"heyyyyyyyyyyhoolelo")
+    console.log('Fields with Array Handling:', Array.isArray(this.content.cityField), "ss", String(this.content.cityField[0]), this.content.cityField[0]);
+
+    +
 console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyyyyyyyhoo")
     // Start constructing the InfoWindow content
-    let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
+    let content = `<div class="info-window-content"><h3>${rawData['name'] || 'Unknown'}</h3>`;
 
-    // Check for each field and add it to content if it exists in rawData
-   
-        content += `<p><strong>Name:</strong> ${rawData['name']}</p>`;
+  
     
     if (fields.city && rawData[fields.city]) {
         content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
