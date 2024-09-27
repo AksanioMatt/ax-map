@@ -634,39 +634,7 @@ export default {
             section: 'settings',
         },
         
-        latitudeField: {
-            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
-            label: {
-                en: 'Latitude field',
-                fr: 'Champ de la latitude',
-            },
-            type: 'ObjectPropertyPath',
-            options: content => {
-                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
-                    return null;
-                }
-                return { object: content.infoWindowFields[0] };
-            },
-            defaultValue: null,
-            section: 'settings',
-        },
-        
-        longitudeField: {
-            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
-            label: {
-                en: 'Longitude field',
-                fr: 'Champ de la longitude',
-            },
-            type: 'ObjectPropertyPath',
-            options: content => {
-                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
-                    return null;
-                }
-                return { object: content.infoWindowFields[0] };
-            },
-            defaultValue: null,
-            section: 'settings',
-        },
+   
         
         phoneNumberField: {
             hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,

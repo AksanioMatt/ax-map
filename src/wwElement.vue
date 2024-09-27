@@ -184,6 +184,7 @@ export default {
                     position: marker.position,
                     map: this.map,
                     icon: icon,
+                    title: marker.content,
                     animation: google.maps.Animation.DROP,
                 });
 
@@ -197,11 +198,14 @@ export default {
                 });
 
                 _marker.addListener('click', e => {
+                    if (!this.content.infoWindowEnabled) {
+                        return;
+                    }
                     this.$emit('trigger-event', {
                         name: 'marker:click',
                         event: { marker, domEvent: e.domEvent },
                     });
-                    
+
                     // Close any open InfoWindow before opening a new one
                     if (this.currentInfoWindow) {
                         this.currentInfoWindow.close();
@@ -240,7 +244,7 @@ export default {
             return null;
         },
         createInfoWindowContent(rawData) {
-            console.log(rawData);
+
             if (!this.content.infoWindowEnabled) {
                 return `<div class="info-window-content"><h3>${rawData['name']}</h3></div>`;
             }
