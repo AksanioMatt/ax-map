@@ -172,25 +172,24 @@ export default {
                 const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
                     ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
                     : this.content.defaultMarkerUrl;
-
+                    let icon = null;
+                    if (this.content.markersIcon) {
+                        icon = url ? {
+                            url,
+                            scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                                ? new google.maps.Size(marker.width, marker.height)
+                                : undefined,
+                        } : {
+                            url: defaultMarkerUrl,
+                            scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                                ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                                : undefined,
+                        };
+                    }
                 const _marker = new google.maps.Marker({
                     position: marker.position,
                     map: this.map,
-                    icon: this.content.markersIcon
-                        ? url
-                            ? {
-                                url,
-                                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                                    ? new google.maps.Size(marker.width, marker.height)
-                                    : undefined,
-                            }
-                            : {
-                                url: defaultMarkerUrl,
-                                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                                    : undefined,
-                            }
-                        : {},
+                    icon: icon || undefined,
                     animation: google.maps.Animation.DROP,
                 });
 
