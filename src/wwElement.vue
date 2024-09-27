@@ -61,14 +61,14 @@ export default {
         mapOptions() {
             return {
                 center: {
-                    lat: parseFloat(this.content.lat || 0),
-                    lng: parseFloat(this.content.lng || 0),
+                    lat: parseFloat(this.content.lat) || 0,
+                    lng: parseFloat(this.content.lng) || 0,
                 },
-                zoom: this.content.zoom,
+                zoom: this.content.zoom || 8,
                 styles: this.content.mapStyle === 'custom'
-                    ? JSON.parse(this.content.mapStyleJSON.code)
+                    ? JSON.parse(this.content.mapStyleJSON.code || '{}')
                     : stylesConfig[this.content.mapStyle],
-                mapTypeId: this.content.defaultMapType,
+                mapTypeId: this.content.defaultMapType || 'roadmap',
                 zoomControl: this.content.zoomControl,
                 scaleControl: this.content.scaleControl,
                 rotateControl: this.content.rotateControl,
@@ -96,24 +96,31 @@ export default {
 
             if (!Array.isArray(this.content.markers)) return [];
 
-            return this.content.markers.map(marker => ({
-                content: wwLib.resolveObjectPropertyPath(marker, fields.name),
-                position: {
-                    lat: parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lat) || 0),
-                    lng: parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lng) || 0),
-                },
-                rawData: marker,
-                url: wwLib.resolveObjectPropertyPath(marker, fields.url),
-                width: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.width) || 0),
-                height: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.height) || 0),
-                city: wwLib.resolveObjectPropertyPath(marker, fields.city),
-                country: wwLib.resolveObjectPropertyPath(marker, fields.country),
-                ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
-                facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
-                phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
-                address: wwLib.resolveObjectPropertyPath(marker, fields.address),
-                infoWindowEnabled: fields.infoWindowEnabled,
-            }));
+            return this.content.markers.map(marker => {
+                const lat = parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lat) || 0);
+                const lng = parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lng) || 0);
+
+                if (isNaN(lat) || isNaN(lng)) {
+                    console.warn('Invalid marker position:', { lat, lng });
+                    return null; // Skip invalid markers
+                }
+
+                return {
+                    content: wwLib.resolveObjectPropertyPath(marker, fields.name),
+                    position: { lat, lng },
+                    rawData: marker,
+                    url: wwLib.resolveObjectPropertyPath(marker, fields.url),
+                    width: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.width) || 0),
+                    height: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.height) || 0),
+                    city: wwLib.resolveObjectPropertyPath(marker, fields.city),
+                    country: wwLib.resolveObjectPropertyPath(marker, fields.country),
+                    ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
+                    facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
+                    phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
+                    address: wwLib.resolveObjectPropertyPath(marker, fields.address),
+                    infoWindowEnabled: fields.infoWindowEnabled,
+                };
+            }).filter(marker => marker !== null); // Filter out null markers
         },
     },
     watch: {
@@ -121,7 +128,7 @@ export default {
         'content.markers': 'reloadMap', // Reload map on markers change
         'content.zoom'(value) {
             if (this.map) {
-                this.map.setZoom(value || 0);
+                this.map.setZoom(value || 8);
             }
         },
         'content.defaultMapType'(value) {
@@ -158,6 +165,7 @@ export default {
             }
             this.wrongKey = false;
             if (!googleKey.length) return;
+
             if (!this.loader) {
                 this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
                 await this.loader.load();
@@ -176,7 +184,7 @@ export default {
 
             const markersArray = this.markers.map(marker => {
                 const icon = {
-                    url: marker.url || this.content.defaultMarkerUrl,
+                    url: marker.url || this.content.defaultMarkerUrl || '',
                     scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
                 };
 
@@ -225,7 +233,7 @@ export default {
 
                 this.setupMarkerEvents(_marker, marker);
                 return _marker;
-            });
+            }).filter(marker => marker !== undefined); // Filter out undefined markers
 
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
@@ -303,7 +311,9 @@ export default {
             }
             const bounds = new google.maps.LatLngBounds();
             this.markers.forEach(marker => {
-                bounds.extend(marker.position);
+                if (marker.position) {
+                    bounds.extend(marker.position);
+                }
             });
             this.map.fitBounds(bounds);
         },
