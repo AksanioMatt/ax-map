@@ -33,16 +33,16 @@ export default {
                 'heightField',
                 'markerTooltipTrigger',
                 'fixedBounds',
-                'infoWindowEnabled', // Added for InfoWindow settings
-                'infoWindowFields',   // Added for InfoWindow fields
-                'cityField',        // Added for City field
-                'countryField',     // Added for Country field
-                'ownershipTypeField', // Added for Ownership Type field
-                'facilityTypeField', // Added for Facility Type field
-                'latitudeField',      // Added for Latitude field
-                'longitudeField',     // Added for Longitude field
-                'phoneNumberField',   // Added for Phone Number field
-                'addressField',       // Added for Address field
+                'infoWindowEnabled', 
+                'infoWindowFields',   
+                'cityField',      
+                'countryField',     
+                'ownershipTypeField', 
+                'facilityTypeField', 
+                'latitudeField',      
+                'longitudeField',     
+                'phoneNumberField',   
+                'addressField',      
                         
             ],
             [

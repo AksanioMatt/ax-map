@@ -78,6 +78,7 @@ export default {
             };
         },
         markers() {
+            console.log(this.content.nameField, this.content.cityField, "finalCheck")
             const fields = {
                 name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
                 lat: this.content.latField || DEFAULT_MARKER_FIELDS.lat,
@@ -90,6 +91,7 @@ export default {
                 ownershipType: this.content.ownershipTypeField || 'ownershipType',
                 facilityType: this.content.facilityTypeField || 'facilityType',
                 phone: this.content.phoneNumberField || 'phone',
+                address: this.content.addressField || 'address',
                 infoWindowEnabled: this.content.infoWindowEnabled || false,
             };
             if (!Array.isArray(this.content.markers)) return [];
@@ -108,13 +110,14 @@ export default {
                 ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
                 facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
                 phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
+                address: wwLib.resolveObjectPropertyPath(marker, fields.address),
                 infoWindowEnabled: fields.infoWindowEnabled,
             }));
         },
     },
     watch: {
         'content.googleKey': 'reloadMap',
-        'content.markers': 'reloadMap', // Reload map on markers change
+        'content.markers': 'reloadMap',
         'content.zoom'(value) {
             if (this.map) {
                 this.map.setZoom(value || 0);
@@ -142,8 +145,8 @@ export default {
     methods: {
         reloadMap() {
             this.clearOldMarkers();
-            this.map = null; // Clear the existing map instance
-            this.initMap(); // Reinitialize the map
+            this.map = null;
+            this.initMap();
         },
         async initMap() {
             const { googleKey } = this.content;
@@ -161,14 +164,14 @@ export default {
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
                 console.log('Map initialized:', this.map);
-                this.updateMapMarkers(); // Ensure markers are updated on map initialization
+                this.updateMapMarkers();
             } catch (error) {
                 console.error('Error initializing map:', error);
             }
         },
         async updateMapMarkers() {
-            this.clearOldMarkers(); // Clear everything before adding new markers
-            if (!this.markers.length || !this.map) return; // Ensure map is initialized
+            this.clearOldMarkers();
+            if (!this.markers.length || !this.map) return;
 
             const markersArray = this.markers.map(marker => {
                 const icon = {
@@ -184,8 +187,7 @@ export default {
                 });
 
                 this.markerInstances.push(_marker);
-                
-                // Create the InfoWindow content based on infoWindowFields
+
                 const infoContent = this.createInfoWindowContent(marker.rawData);
 
                 const infowindow = new google.maps.InfoWindow({
@@ -218,7 +220,6 @@ export default {
                         name: 'marker:click',
                         event: { marker, domEvent: e.domEvent },
                     });
-                    console.log("why is the sheeed on",this.createInfoWindowContent(marker.rawData))
                     infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                     infowindow.open(this.map, _marker);
                 });
@@ -241,63 +242,56 @@ export default {
             }
         },
         getFieldName(field) {
-    if (typeof field === 'string' && (field.includes('[') || field.includes(']'))) {
-        // Remove brackets and quotes
-        field = field.replace(/[\[\]']/g, '');
-        // If it's formatted with commas, extract the first element
-        if (field.includes(',')) {
-            return field.split(',')[0].trim(); // Get the first element as a string
-        }
-        return String(field); // Return as string if not an array
-    }
-    return null; // Return null if no brackets are found or not a string
-},
+            if (typeof field === 'string' && (field.includes('[') || field.includes(']'))) {
+                field = field.replace(/[\[\]']/g, '');
+                if (field.includes(',')) {
+                    return field.split(',')[0].trim();
+                }
+                return String(field);
+            }
+            return null;
+        },
         createInfoWindowContent(rawData) {
-    if (!this.content.infoWindowEnabled) {
-        return ''; // Return empty string if InfoWindow is not enabled
-    }
-  
+            console.log(rawData)
+            if (!this.content.infoWindowEnabled) {
+                return '';
+            }
 
 
-    const fields = {
-        name: this.getFieldName(this.content.nameField),
-        city: this.getFieldName(this.content.cityField),
-        phone: this.getFieldName(this.content.phoneField),
-        country: this.getFieldName(this.content.countryField),
-        ownershipType: this.getFieldName(this.content.ownershipTypeField),
-        facilityType: this.getFieldName(this.content.facilityTypeField),
-    };
-    console.log(fields,"heyyyyyyyyyyhoolelo")
-    console.log('Fields with Array Handling:', Array.isArray(this.content.cityField), "ss", String(this.content.cityField[0]), this.content.cityField);
 
-    +
-console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyyyyyyyhoo")
-    // Start constructing the InfoWindow content
-    let content = `<div class="info-window-content"><h3>${rawData['name'] || 'Unknown'}</h3>`;
+            const fields = {
+                city: this.getFieldName(this.content.cityField),
+                phone: this.getFieldName(this.content.phoneField),
+                country: this.getFieldName(this.content.countryField),
+                ownershipType: this.getFieldName(this.content.ownershipTypeField),
+                facilityType: this.getFieldName(this.content.facilityTypeField),
+                address: this.getFieldName(this.content.addressField),
+            };
 
-  
-    
-    if (fields.city && rawData[fields.city]) {
-        content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
-    }
-    if (fields.phone && rawData[fields.phone]) {
-        content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
-    }
-    if (fields.country && rawData[fields.country]) {
-        content += `<p><strong>Country:</strong> ${rawData[fields.country]}</p>`;
-    }
-    if (fields.ownershipType && rawData[fields.ownershipType]) {
-        content += `<p><strong>Ownership Type:</strong> ${rawData[fields.ownershipType]}</p>`;
-    }
-    if (fields.facilityType && rawData[fields.facilityType]) {
-        content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
-    }
 
-    // Close the info window content div
-    content += '</div>';
-   console.log(content,"contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent") 
-    return content;
-},
+            let content = `<div class="info-window-content"><h3>${rawData['name'] || 'Unknown'}</h3>`;
+            if (fields.phone && rawData[fields.phone]) {
+                content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
+            }
+            if (fields.address && rawData[fields.address]) {
+                content += `<p><strong>Address:</strong> ${rawData[fields.address]}</p>`;
+            }
+            if (fields.city && rawData[fields.city]) {
+                content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
+            }
+            if (fields.country && rawData[fields.country]) {
+                content += `<p><strong>Country:</strong> ${rawData[fields.country]}</p>`;
+            }
+            if (fields.ownershipType && rawData[fields.ownershipType]) {
+                content += `<p><strong>Ownership Type:</strong> ${rawData[fields.ownershipType]}</p>`;
+            }
+            if (fields.facilityType && rawData[fields.facilityType]) {
+                content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
+            }
+
+            content += '</div>';
+            return content;
+        },
 
 
         setupMarkerEvents(marker, markerData) {
@@ -340,24 +334,29 @@ console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyy
     height: 100%;
     overflow: hidden;
 }
+
 .map-container {
     position: absolute;
     width: 100%;
     height: 100%;
 }
+
 .map {
     width: 100%;
     height: 100%;
 }
+
 .map-placeholder {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
 }
+
 .error {
     color: red;
 }
+
 .wrongKey {
     color: orange;
 }
