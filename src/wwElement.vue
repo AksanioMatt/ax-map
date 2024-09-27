@@ -13,6 +13,9 @@
                 </div>
             </div>
             <div ref="map" class="map" :class="{ error: isError }"></div>
+            <div v-if="tooltipVisible" class="tooltip" :style="{ left: tooltipX + 'px', top: tooltipY + 'px' }">
+                {{ tooltipContent }}
+            </div>
         </div>
     </div>
 </template>
@@ -47,6 +50,10 @@ export default {
             clusterer: null,
             markerInstances: [],
             currentInfoWindow: null, // Track the currently open InfoWindow
+            tooltipVisible: false,
+            tooltipContent: '',
+            tooltipX: 0,
+            tooltipY: 0,
         };
     },
     computed: {
@@ -79,7 +86,6 @@ export default {
             };
         },
         markers() {
-            console.log(this.content.nameField, this.content.cityField, "finalCheck");
             const fields = {
                 name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
                 lat: this.content.latField || DEFAULT_MARKER_FIELDS.lat,
@@ -216,6 +222,20 @@ export default {
                     this.currentInfoWindow = infowindow; // Track the open InfoWindow
                 });
 
+                // Tooltip mouseover and mouseout events
+                _marker.addListener('mouseover', (e) => {
+                    this.tooltipContent = marker.rawData['name']; // Use marker's name
+                    const projection = this.map.getProjection();
+                    const position = projection.fromLatLngToPoint(marker.position);
+                    this.tooltipX = position.x + 10; // Adjust for better positioning
+                    this.tooltipY = position.y - 20; // Adjust for better positioning
+                    this.tooltipVisible = true;
+                });
+
+                _marker.addListener('mouseout', () => {
+                    this.tooltipVisible = false;
+                });
+
                 this.setupMarkerEvents(_marker, marker);
                 return _marker;
             });
@@ -244,7 +264,6 @@ export default {
             return null;
         },
         createInfoWindowContent(rawData) {
-
             if (!this.content.infoWindowEnabled) {
                 return `<div class="info-window-content"><h3>${rawData['name']}</h3></div>`;
             }
@@ -353,5 +372,14 @@ export default {
 
 .wrongKey {
     color: orange;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px;
+    border-radius: 4px;
+    pointer-events: none; /* Prevent mouse events */
 }
 </style>
