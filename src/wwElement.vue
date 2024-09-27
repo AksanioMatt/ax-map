@@ -128,27 +128,6 @@ export default {
         this.observer.disconnect();
     },
     methods: {
-        
-        async initialize() {
-            const { googleKey } = this.content;
-            if (!this.isGoogleKeyMatch) {
-                this.wrongKey = googleKey && googleKey.length ? true : false;
-                setTimeout(() => { this.wrongKey = false; }, 8000);
-                return;
-            }
-            this.wrongKey = false;
-            if (!googleKey.length) return;
-            if (!this.loader) {
-                this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
-                await this.loader.load();
-            }
-            try {
-                this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
-            } catch (error) {
-                console.error(error);
-            }
-        }
-        ,
         async initMap() {
             const { googleKey } = this.content;
             if (!this.isGoogleKeyMatch) {
@@ -179,7 +158,7 @@ export default {
                     scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
                 };
 
-                const _marker = new google.maps.Marker({
+                const _marker = new google.maps.marker.AdvancedMarkerElement({
                     position: marker.position,
                     map: this.map,
                     icon: icon,
@@ -196,12 +175,9 @@ export default {
             }
             this.clusterer = new MarkerClusterer({
                 map: this.map,
-                markers: [],
+                markers: markersArray,
                 options: { minimumClusterSize: 2 },
             });
-            this.clusterer.clearMarkers();
-            this.clusterer.addMarkers(markersArray);
-            google.maps.event.addDomListener(window, "load", initialize);
 
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
