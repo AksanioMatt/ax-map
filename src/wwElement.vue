@@ -244,15 +244,17 @@ export default {
     if (!this.content.infoWindowEnabled) {
         return ''; // Return empty string if InfoWindow is not enabled
     }
+    
 
     const fields = {
-        name: Array.isArray(this.content.nameField) ? this.content.nameField[0] : null,
-        city: Array.isArray(this.content.cityField) ? this.content.cityField[0] : null,
-        phone: Array.isArray(this.content.phoneField) ? this.content.phoneField[0] : null,
-        country: Array.isArray(this.content.countryField) ? this.content.countryField[0] : null,
-        ownershipType: Array.isArray(this.content.ownershipTypeField) ? this.content.ownershipTypeField[0] : null,
-        facilityType: Array.isArray(this.content.facilityTypeField) ? this.content.facilityTypeField[0] : null,
+        name: Array.isArray(this.content.nameField) ? String(this.content.nameField[0]) : null,
+        city: Array.isArray(this.content.cityField) ? String(this.content.cityField[0]) : null,
+        phone: Array.isArray(this.content.phoneField) ? String(this.content.phoneField[0]) : null,
+        country: Array.isArray(this.content.countryField) ? String(this.content.countryField[0]) : null,
+        ownershipType: Array.isArray(this.content.ownershipTypeField) ? String(this.content.ownershipTypeField[0]) : null,
+        facilityType: Array.isArray(this.content.facilityTypeField) ? String(this.content.facilityTypeField[0]) : null,
     };
+    console.log(fields,"heyyyyyyyyyyhoolelo")
 console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyyyyyyyhoo")
     // Start constructing the InfoWindow content
     let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
