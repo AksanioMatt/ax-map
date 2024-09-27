@@ -20,7 +20,7 @@
 <script>
 import { Loader } from './googleLoader';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { AdvancedMarkerElement } from '@googlemaps/marker'; // Import AdvancedMarkerElement
+import { AdvancedMarkerElement } from '@googlemaps/marker'; // Ensure this is the correct import
 import stylesConfig from './stylesConfig.json';
 
 const DEFAULT_MARKER_FIELDS = {
@@ -103,11 +103,10 @@ export default {
     },
     watch: {
         'content.googleKey': 'initMap',
-        'content.markers': 'updateMapMarkers', // Update markers when content changes
+        'content.markers': 'updateMapMarkers',
         'content.zoom'(value) {
             if (this.map) {
                 this.map.setZoom(value || 0);
-                this.updateMarkerVisibility();
             }
         },
         'content.defaultMapType'(value) {
@@ -144,37 +143,30 @@ export default {
                 await this.loader.load();
             }
             try {
-                this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
+                this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
                 this.updateMapMarkers(); // Ensure markers are updated on map initialization
-                this.updateMarkerVisibility();
             } catch (error) {
-                wwLib.wwLog.error(error);
+                console.error(error);
             }
         },
         async updateMapMarkers() {
-            // Clear previous markers and clusterer
             this.clearOldMarkers();
-
             if (!this.markers.length) return;
 
-            // Create and store new markers
             const markersArray = this.markers.map(marker => {
-                const markerOptions = {
+                const markerElement = new AdvancedMarkerElement({
                     position: marker.position,
                     map: this.map,
-                    title: marker.content,
-                    // Custom icon handling
+                    title: marker.content, // Optional title
+                    // You can customize the icon here
                     icon: this.getMarkerIcon(marker),
-                };
+                });
 
-                const advancedMarker = new AdvancedMarkerElement(markerOptions); // Use AdvancedMarkerElement
-                this.markerInstances.push(advancedMarker);
-
-                this.setupMarkerEvents(advancedMarker, marker);
-                return advancedMarker;
+                this.markerInstances.push(markerElement);
+                this.setupMarkerEvents(markerElement, marker);
+                return markerElement;
             });
 
-            // Initialize MarkerClusterer
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
             }
@@ -188,86 +180,35 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
-
         getMarkerIcon(marker) {
-            const url = marker.url && marker.url.startsWith('designs/')
-                ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-                : marker.url;
-
-            const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-                ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-                : this.content.defaultMarkerUrl;
-
-            if (this.content.markersIcon) {
-                return url ? {
-                    url,
-                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                        ? new google.maps.Size(marker.width, marker.height)
-                        : undefined,
-                } : {
-                    url: defaultMarkerUrl,
-                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                        : undefined,
-                };
-            }
-            return null;
+            // Define your icon logic here
+            return {
+                url: marker.url || this.content.defaultMarkerUrl,
+                scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
+            };
         },
-
         setupMarkerEvents(marker, markerData) {
-            marker.addListener('mouseover', e => {
-                this.$emit('trigger-event', {
-                    name: 'marker:mouseover',
-                    event: { marker: markerData, domEvent: e.domEvent },
-                });
-                if (this.content.markerTooltipTrigger === 'hover' && markerData.content) {
-                    marker.open(this.map, marker);
-                }
-            });
-
-            marker.addListener('mouseout', e => {
-                this.$emit('trigger-event', {
-                    name: 'marker:mouseout',
-                    event: { marker: markerData, domEvent: e.domEvent },
-                });
-                if (this.content.markerTooltipTrigger === 'hover') {
-                    marker.close();
-                }
-            });
-
-            marker.addListener('click', e => {
+            marker.addListener('click', () => {
                 this.$emit('trigger-event', {
                     name: 'marker:click',
-                    event: { marker: markerData, domEvent: e.domEvent },
+                    event: { marker: markerData },
                 });
-                if (this.content.markerTooltipTrigger === 'click' && markerData.content) {
-                    marker.open(this.map, marker);
-                }
             });
         },
-
         clearOldMarkers() {
-            // Clear the existing markers from the map
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];
-
-            // Clear the existing clusterer if it exists
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
-                this.clusterer = null; // Remove reference to old clusterer
+                this.clusterer = null; // Clear reference
             }
         },
-
         setMapMarkerBounds() {
             const bounds = new google.maps.LatLngBounds();
             this.markers.forEach(marker => {
                 bounds.extend(marker.position);
             });
             this.map.fitBounds(bounds);
-        },
-
-        updateMarkerVisibility() {
-            // Implementation for marker visibility logic if needed
         },
     },
 };
@@ -276,8 +217,12 @@ export default {
 <style scoped>
 .ww-map {
     position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 .map-container {
+    position: absolute;
     width: 100%;
     height: 100%;
 }
