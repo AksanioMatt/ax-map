@@ -102,7 +102,7 @@ export default {
     },
     watch: {
         'content.googleKey': 'reloadMap',
-        'content.markers': 'updateMapMarkers',
+        'content.markers': 'reloadMap', // Reload map on markers change
         'content.zoom'(value) {
             if (this.map) {
                 this.map.setZoom(value || 0);
