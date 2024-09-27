@@ -117,83 +117,48 @@ export default {
         },
     },
     mounted() {
-    // Wait for the component to fully render before initializing the map
-    this.$nextTick(() => {
         this.initMap();
-    });
-
-    // Observer for fixed bounds
-    this.observer = new IntersectionObserver(
-        changes => {
+        this.observer = new IntersectionObserver(changes => {
             if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
-        },
-        { trackVisibility: true, delay: 100 }
-    );
-    this.observer.observe(this.$refs.map);
-},
-
-
+        }, { trackVisibility: true, delay: 100 });
+        this.observer.observe(this.$refs.map);
+    },
     beforeUnmount() {
         this.observer.disconnect();
     },
     methods: {
-        
-async initMap() {
-    const { googleKey } = this.content;
-    
-    // Check if the map container is available
-    if (!this.$refs.map) {
-        console.error("Map container is not available.");
-        return;
-    }
-
-    if (!this.isGoogleKeyMatch) {
-        if (googleKey && googleKey.length) this.wrongKey = true;
-        setTimeout(() => {
+        async initMap() {
+            const { googleKey } = this.content;
+            if (!this.isGoogleKeyMatch) {
+                this.wrongKey = googleKey && googleKey.length ? true : false;
+                setTimeout(() => { this.wrongKey = false; }, 8000);
+                return;
+            }
             this.wrongKey = false;
-        }, 8000);
-        return;
-    }
-
-    this.wrongKey = false;
-    if (!googleKey.length) return;
-
-    // Load the Google Maps API
-    if (!this.loader) {
-        this.loader = new Loader({
-            apiKey: googleKey,
-            language: wwLib.wwLang.lang,
-        });
-        await this.loader.load();
-    }
-
-    try {
-        // Initialize the map
-        this.map = new google.maps.Map(this.$refs.map, {
-            ...this.mapOptions,
-            zoom: this.content.zoom,
-        });
-
-        // Add click event listener to the map
-        this.map.addListener('click', mapsMouseEvent => {
-            mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
-            mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
-            this.$emit('trigger-event', {
-                name: 'map:click',
-                event: { ...mapsMouseEvent },
-            });
-        });
-
-        // Update markers and visibility
-        this.updateMapMarkers();
-        this.updateMarkerVisibility();
-    } catch (error) {
-        console.error("Error initializing map:", error);
-    }
-},
-        async updateMapMarkers() {
+            if (!googleKey.length) return;
+            if (!this.loader) {
+                this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
+                await this.loader.load();
+            }
+            try {
+                this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
+                this.map.addListener('click', mapsMouseEvent => {
+                    mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
+                    mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
+                    this.$emit('trigger-event', {
+                        name: 'map:click',
+                        event: { ...mapsMouseEvent },
+                    });
+                });
+                this.updateMapMarkers(); // Ensure markers are updated on map initialization
+                this.updateMarkerVisibility();
+            } catch (error) {
+                wwLib.wwLog.error(error);
+            }
+        },
+   async updateMapMarkers() {
     // Clear previous markers and clusterer
     this.clearOldMarkers();
 
