@@ -175,9 +175,12 @@ export default {
             }
             this.clusterer = new MarkerClusterer({
                 map: this.map,
-                markers: markersArray,
+                markers: [],
                 options: { minimumClusterSize: 2 },
             });
+            this.clusterer.clearMarkers();
+            this.clusterer.addMarkers(markersArray);
+            google.maps.event.addDomListener(window, "load", initialize);
 
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
