@@ -20,7 +20,6 @@
 <script>
 import { Loader } from './googleLoader';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { AdvancedMarkerElement } from '@googlemaps/marker'; // Ensure this is the correct import
 import stylesConfig from './stylesConfig.json';
 
 const DEFAULT_MARKER_FIELDS = {
@@ -154,17 +153,21 @@ export default {
             if (!this.markers.length) return;
 
             const markersArray = this.markers.map(marker => {
-                const markerElement = new AdvancedMarkerElement({
+                const icon = {
+                    url: marker.url || this.content.defaultMarkerUrl,
+                    scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
+                };
+
+                const _marker = new google.maps.Marker({
                     position: marker.position,
                     map: this.map,
-                    title: marker.content, // Optional title
-                    // You can customize the icon here
-                    icon: this.getMarkerIcon(marker),
+                    icon: icon,
+                    animation: google.maps.Animation.DROP,
                 });
 
-                this.markerInstances.push(markerElement);
-                this.setupMarkerEvents(markerElement, marker);
-                return markerElement;
+                this.markerInstances.push(_marker);
+                this.setupMarkerEvents(_marker, marker);
+                return _marker;
             });
 
             if (this.clusterer) {
@@ -179,13 +182,6 @@ export default {
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
             }
-        },
-        getMarkerIcon(marker) {
-            // Define your icon logic here
-            return {
-                url: marker.url || this.content.defaultMarkerUrl,
-                scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
-            };
         },
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {
