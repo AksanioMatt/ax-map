@@ -158,17 +158,10 @@ export default {
                 wwLib.wwLog.error(error);
             }
         },
-   async updateMapMarkers() {
+        async updateMapMarkers() {
     // Clear previous markers and clusterer
     this.clearOldMarkers();
 
-    // Ensure the map is initialized
-    if (!this.map) {
-        console.error("Map is not initialized.");
-        return;
-    }
-
-    // If there are no markers, exit early
     if (!this.markers.length) return;
 
     // Create a new markers array
@@ -204,9 +197,41 @@ export default {
         });
 
         this.markerInstances.push(_marker);
+        const infowindow = new google.maps.InfoWindow({
+            content: marker.content,
+            maxWidth: 200,
+        });
 
         // Event listeners for marker interactions
-        this.addMarkerEventListeners(_marker, marker);
+        _marker.addListener('mouseover', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:mouseover',
+                event: { marker, domEvent: e.domEvent },
+            });
+            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
+                infowindow.open(this.map, _marker);
+            }
+        });
+
+        _marker.addListener('mouseout', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:mouseout',
+                event: { marker, domEvent: e.domEvent },
+            });
+            if (this.content.markerTooltipTrigger === 'hover') {
+                infowindow.close();
+            }
+        });
+
+        _marker.addListener('click', e => {
+            this.$emit('trigger-event', {
+                name: 'marker:click',
+                event: { marker, domEvent: e.domEvent },
+            });
+            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
+                infowindow.open(this.map, _marker);
+            }
+        });
 
         return _marker;
     });
@@ -220,7 +245,6 @@ export default {
     // Initialize MarkerClusterer with the new markers
     this.clusterer = new MarkerClusterer(this.map, markersArray, {
         minimumClusterSize: 2,
-        imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m', // Use default cluster icon path
     });
 
     // Force the map to refresh
@@ -229,43 +253,6 @@ export default {
     if (this.content.fixedBounds) {
         this.setMapMarkerBounds();
     }
-},
-
-addMarkerEventListeners(marker, markerData) {
-    const infowindow = new google.maps.InfoWindow({
-        content: markerData.content,
-        maxWidth: 200,
-    });
-
-    marker.addListener('mouseover', e => {
-        this.$emit('trigger-event', {
-            name: 'marker:mouseover',
-            event: { marker: markerData, domEvent: e.domEvent },
-        });
-        if (this.content.markerTooltipTrigger === 'hover' && markerData.content) {
-            infowindow.open(this.map, marker);
-        }
-    });
-
-    marker.addListener('mouseout', e => {
-        this.$emit('trigger-event', {
-            name: 'marker:mouseout',
-            event: { marker: markerData, domEvent: e.domEvent },
-        });
-        if (this.content.markerTooltipTrigger === 'hover') {
-            infowindow.close();
-        }
-    });
-
-    marker.addListener('click', e => {
-        this.$emit('trigger-event', {
-            name: 'marker:click',
-            event: { marker: markerData, domEvent: e.domEvent },
-        });
-        if (this.content.markerTooltipTrigger === 'click' && markerData.content) {
-            infowindow.open(this.map, marker);
-        }
-    });
 },
 
 clearOldMarkers() {
@@ -282,16 +269,13 @@ clearOldMarkers() {
     }
 },
 
-updateMarkerVisibility() {
-    const zoomLevel = this.map.getZoom();
-    const showMarkers = zoomLevel >= 15; // Only show markers when zoomed in
-
-    // Only show markers based on zoom level
-    for (const marker of this.markerInstances) {
-        marker.setMap(showMarkers ? this.map : null);
-    }
-}
-,
+        updateMarkerVisibility() {
+            const zoomLevel = this.map.getZoom();
+            const showMarkers = zoomLevel >= 15; // Adjust visibility threshold as needed
+            this.markerInstances.forEach(marker => {
+                marker.setMap(showMarkers ? this.map : null);
+            });
+        },
         setMapMarkerBounds() {
             if (!this.map || this.markers.length < 2) return;
             const mapBounds = new google.maps.LatLngBounds();
