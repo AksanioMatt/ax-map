@@ -252,7 +252,7 @@ export default {
                 ownershipType: this.content.ownershipTypeField || 'ownershipType',
                 facilityType: this.content.facilityTypeField || 'facilityType',
             };
-
+ console.log(fields.name, fields.city, "chgeclikhihqgd   gtdfo8gtdgde8ide8icd", fields)
             // Start constructing the InfoWindow content
             let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
 
