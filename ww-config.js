@@ -473,7 +473,7 @@ export default {
             options: {
                 item: {
                     type: 'Object',
-                    defaultValue: { id: 1, city: '', country: '', ownershipType: '', facilityType: '', latLng: '', primaryFacility: false, duplicateFacility: false, nonFacility: false },
+                    defaultValue: { id: 1, name: '', city: '', country: '', ownershipType: '', facilityType: '', latLng: '', primaryFacility: false, duplicateFacility: false, nonFacility: false },
                     options: {
                         item: {
                             id: {
@@ -482,39 +482,39 @@ export default {
                                 bindable: true,
                                 options: { defaultValue: 1 },
                             },
+                            name: {
+                                label: { en: 'Name', fr: 'Nom' },
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
+                                options: { placeholder: 'Name Field' },
+                                bindable: true,
+                            },
                             city: {
                                 label: { en: 'City', fr: 'Ville' },
-                                type: 'Text',
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
                                 options: { placeholder: 'City Name' },
                                 bindable: true,
                             },
                             country: {
                                 label: { en: 'Country', fr: 'Pays' },
-                                type: 'Text',
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
                                 options: { placeholder: 'Country Name' },
                                 bindable: true,
                             },
                             ownershipType: {
                                 label: { en: 'Ownership Type', fr: 'Type de propriété' },
-                                type: 'TextSelect',
-                                options: {
-                                    options: [
-                                        { value: 'Govt', label: 'Government' },
-                                        { value: 'Private', label: 'Private' },
-                                        { value: 'NGO', label: 'NGO' },
-                                    ],
-                                },
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
+                                options: { placeholder: 'Ownership Type' },
                                 bindable: true,
                             },
                             facilityType: {
                                 label: { en: 'Facility Type', fr: 'Type d\'établissement' },
-                                type: 'Text',
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
                                 options: { placeholder: 'Facility Type' },
                                 bindable: true,
                             },
                             latLng: {
                                 label: { en: 'LatLng', fr: 'LatLng' },
-                                type: 'Text',
+                                type: 'ObjectPropertyPath', // Allows binding to a property from the collection
                                 options: { placeholder: 'Latitude, Longitude' },
                                 bindable: true,
                             },
@@ -543,6 +543,7 @@ export default {
             defaultValue: [
                 {
                     id: 1,
+                    name: 'Bengo',
                     city: 'Bengo',
                     country: 'Angola',
                     ownershipType: 'Govt.',
