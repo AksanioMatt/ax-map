@@ -143,14 +143,15 @@ export default {
             }
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
+                console.log('Map initialized:', this.map);
                 this.updateMapMarkers(); // Ensure markers are updated on map initialization
             } catch (error) {
-                console.error(error);
+                console.error('Error initializing map:', error);
             }
         },
         async updateMapMarkers() {
             this.clearOldMarkers(); // Clear everything before adding new markers
-            if (!this.markers.length) return;
+            if (!this.markers.length || !this.map) return; // Ensure map is initialized
 
             const markersArray = this.markers.map(marker => {
                 const icon = {
@@ -202,6 +203,10 @@ export default {
             }
         },
         setMapMarkerBounds() {
+            if (!this.map) {
+                console.warn('Map is not initialized yet.');
+                return; // Early return if the map is not initialized
+            }
             const bounds = new google.maps.LatLngBounds();
             this.markers.forEach(marker => {
                 bounds.extend(marker.position);
@@ -211,8 +216,6 @@ export default {
     },
 };
 </script>
-
-
 
 <style scoped>
 .ww-map {
