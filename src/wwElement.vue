@@ -5,7 +5,7 @@
                 <div class="placeholder-content">
                     If you want to use a Google map, you need to have a Google API Key. If you already have one, you can
                     add it in the map settings. <br /><br />
-                    Otherwise you can follow these instructions:
+                    Otherwise, you can follow these instructions:
                     <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">
                         <button>API Key documentation</button>
                     </a>
@@ -20,6 +20,7 @@
 <script>
 import { Loader } from './googleLoader';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
+import { AdvancedMarkerElement } from '@googlemaps/marker'; // Import AdvancedMarkerElement
 import stylesConfig from './stylesConfig.json';
 
 const DEFAULT_MARKER_FIELDS = {
@@ -144,14 +145,6 @@ export default {
             }
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions, zoom: this.content.zoom });
-                this.map.addListener('click', mapsMouseEvent => {
-                    mapsMouseEvent.latLng.lat = mapsMouseEvent.latLng.lat();
-                    mapsMouseEvent.latLng.lng = mapsMouseEvent.latLng.lng();
-                    this.$emit('trigger-event', {
-                        name: 'map:click',
-                        event: { ...mapsMouseEvent },
-                    });
-                });
                 this.updateMapMarkers(); // Ensure markers are updated on map initialization
                 this.updateMarkerVisibility();
             } catch (error) {
@@ -159,214 +152,149 @@ export default {
             }
         },
         async updateMapMarkers() {
-    // Clear previous markers and clusterer
-    this.clearOldMarkers();
+            // Clear previous markers and clusterer
+            this.clearOldMarkers();
 
-    if (!this.markers.length) return;
+            if (!this.markers.length) return;
 
-    // Create a new markers array
-    const markersArray = this.markers.map(marker => {
-        const url = marker.url && marker.url.startsWith('designs/')
-            ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
-            : marker.url;
+            // Create and store new markers
+            const markersArray = this.markers.map(marker => {
+                const markerOptions = {
+                    position: marker.position,
+                    map: this.map,
+                    title: marker.content,
+                    // Custom icon handling
+                    icon: this.getMarkerIcon(marker),
+                };
 
-        const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
-            ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
-            : this.content.defaultMarkerUrl;
+                const advancedMarker = new AdvancedMarkerElement(markerOptions); // Use AdvancedMarkerElement
+                this.markerInstances.push(advancedMarker);
 
-        let icon = null;
-        if (this.content.markersIcon) {
-            icon = url ? {
-                url,
-                scaledSize: !this.content.markersAutoSize && marker.width && marker.height
-                    ? new google.maps.Size(marker.width, marker.height)
-                    : undefined,
-            } : {
-                url: defaultMarkerUrl,
-                scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
-                    ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
-                    : undefined,
-            };
-        }
-
-        const _marker = new google.maps.Marker({
-            position: marker.position,
-            map: this.map,
-            icon: icon || undefined,
-            animation: google.maps.Animation.DROP,
-        });
-
-        this.markerInstances.push(_marker);
-        const infowindow = new google.maps.InfoWindow({
-            content: marker.content,
-            maxWidth: 200,
-        });
-
-        _marker.addListener('mouseover', e => {
-            this.$emit('trigger-event', {
-                name: 'marker:mouseover',
-                event: { marker, domEvent: e.domEvent },
+                this.setupMarkerEvents(advancedMarker, marker);
+                return advancedMarker;
             });
-            if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                infowindow.open(this.map, _marker);
-            }
-        });
 
-        _marker.addListener('mouseout', e => {
-            this.$emit('trigger-event', {
-                name: 'marker:mouseout',
-                event: { marker, domEvent: e.domEvent },
+            // Initialize MarkerClusterer
+            if (this.clusterer) {
+                this.clusterer.clearMarkers();
+            }
+            this.clusterer = new MarkerClusterer({
+                map: this.map,
+                markers: markersArray,
+                options: { minimumClusterSize: 2 },
             });
-            if (this.content.markerTooltipTrigger === 'hover') {
-                infowindow.close();
-            }
-        });
 
-        _marker.addListener('click', e => {
-            this.$emit('trigger-event', {
-                name: 'marker:click',
-                event: { marker, domEvent: e.domEvent },
+            if (this.content.fixedBounds) {
+                this.setMapMarkerBounds();
+            }
+        },
+
+        getMarkerIcon(marker) {
+            const url = marker.url && marker.url.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${marker.url}`
+                : marker.url;
+
+            const defaultMarkerUrl = this.content.defaultMarkerUrl && this.content.defaultMarkerUrl.startsWith('designs/')
+                ? `${wwLib.wwUtils.getCdnPrefix()}${this.content.defaultMarkerUrl}`
+                : this.content.defaultMarkerUrl;
+
+            if (this.content.markersIcon) {
+                return url ? {
+                    url,
+                    scaledSize: !this.content.markersAutoSize && marker.width && marker.height
+                        ? new google.maps.Size(marker.width, marker.height)
+                        : undefined,
+                } : {
+                    url: defaultMarkerUrl,
+                    scaledSize: !this.content.markersAutoSize && this.content.defaultMarkerWidth && this.content.defaultMarkerHeight
+                        ? new google.maps.Size(this.content.defaultMarkerWidth, this.content.defaultMarkerHeight)
+                        : undefined,
+                };
+            }
+            return null;
+        },
+
+        setupMarkerEvents(marker, markerData) {
+            marker.addListener('mouseover', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseover',
+                    event: { marker: markerData, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover' && markerData.content) {
+                    marker.open(this.map, marker);
+                }
             });
-            if (this.content.markerTooltipTrigger === 'click' && marker.content) {
-                infowindow.open(this.map, _marker);
+
+            marker.addListener('mouseout', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:mouseout',
+                    event: { marker: markerData, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'hover') {
+                    marker.close();
+                }
+            });
+
+            marker.addListener('click', e => {
+                this.$emit('trigger-event', {
+                    name: 'marker:click',
+                    event: { marker: markerData, domEvent: e.domEvent },
+                });
+                if (this.content.markerTooltipTrigger === 'click' && markerData.content) {
+                    marker.open(this.map, marker);
+                }
+            });
+        },
+
+        clearOldMarkers() {
+            // Clear the existing markers from the map
+            this.markerInstances.forEach(marker => marker.setMap(null));
+            this.markerInstances = [];
+
+            // Clear the existing clusterer if it exists
+            if (this.clusterer) {
+                this.clusterer.clearMarkers();
+                this.clusterer = null; // Remove reference to old clusterer
             }
-        });
+        },
 
-        return _marker;
-    });
-
-    // Clear existing clusterer if it exists
-    if (this.clusterer) {
-        this.clusterer.clearMarkers();
-    }
-
-    // Initialize MarkerClusterer with the new markers
-    this.clusterer = new MarkerClusterer({
-        map: this.map,
-        markers: markersArray,
-        options: { minimumClusterSize: 2 },
-    });
-
-    if (this.content.fixedBounds) {
-        this.setMapMarkerBounds();
-    }
-},
-
-clearOldMarkers() {
-    // Clear the existing markers from the map
-    for (const marker of this.markerInstances) {
-        marker.setMap(null);
-    }
-    this.markerInstances = [];
-
-    // Clear the existing clusterer if it exists
-    if (this.clusterer) {
-        this.clusterer.clearMarkers();
-        this.clusterer = null; // Remove reference to old clusterer
-    }
-},
+        setMapMarkerBounds() {
+            const bounds = new google.maps.LatLngBounds();
+            this.markers.forEach(marker => {
+                bounds.extend(marker.position);
+            });
+            this.map.fitBounds(bounds);
+        },
 
         updateMarkerVisibility() {
-            const zoomLevel = this.map.getZoom();
-            const showMarkers = zoomLevel >= 15; // Adjust visibility threshold as needed
-            this.markerInstances.forEach(marker => {
-                marker.setMap(showMarkers ? this.map : null);
-            });
-        },
-        setMapMarkerBounds() {
-            if (!this.map || this.markers.length < 2) return;
-            const mapBounds = new google.maps.LatLngBounds();
-            this.markers.forEach(marker => mapBounds.extend(marker.position));
-            this.map.fitBounds(mapBounds);
-        },
-        getMarkerTestEvent() {
-            if (!this.markers.length) throw new Error('No markers found');
-            return { marker: this.markers[0], domEvent: { x: 128, y: 156, target: null } };
+            // Implementation for marker visibility logic if needed
         },
     },
 };
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .ww-map {
     position: relative;
+}
+.map-container {
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    padding: 20%;
-    pointer-events: initial;
-
-    &.inactive {
-        pointer-events: none;
-    }
-
-    .map-container {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-
-        .map {
-            z-index: 1;
-            height: 100%;
-            width: 100%;
-
-            &.error {
-                filter: blur(8px);
-            }
-        }
-
-        .map-placeholder {
-            z-index: 2;
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-
-            &.error {
-                background-color: rgba(0, 0, 0, 0.4);
-            }
-
-            .placeholder-content {
-                text-align: center;
-                width: 90%;
-                background: white;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 0.8em 1.2em;
-                border-radius: 12px;
-
-                .wrongKey {
-                    color: #f44336;
-                    padding: 10px;
-                }
-
-                button {
-                    margin-top: 20px;
-                    padding: 0.8em 1.2em;
-                    border: none;
-                    border-radius: 12px;
-                    background-color: #099af2;
-                    color: white;
-                    font-weight: 500;
-                    font-size: 1.1em;
-                    transition: 0.3s;
-
-                    &:hover {
-                        cursor: pointer;
-                        background-color: #077ac0;
-                    }
-                }
-            }
-        }
-    }
+}
+.map {
+    width: 100%;
+    height: 100%;
+}
+.map-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+.error {
+    color: red;
+}
+.wrongKey {
+    color: orange;
 }
 </style>
