@@ -227,28 +227,47 @@ export default {
             }
         },
         createInfoWindowContent(rawData) {
+            if (!this.content.infoWindowEnabled) {
+                return ''; // Return empty string if InfoWindow is not enabled
+            }
+
             const fields = {
-                name: this.content.infoWindowFields ? this.content.infoWindowFields[0].name : '',
-                city: this.content.infoWindowFields ? this.content.infoWindowFields[0].city : '',
-                phone: this.content.infoWindowFields ? this.content.infoWindowFields[0].phone : '',
-                country: this.content.infoWindowFields ? this.content.infoWindowFields[0].country : '',
-                nonFacility: this.content.infoWindowFields ? this.content.infoWindowFields[0].nonFacility : false,
+                name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
+                city: this.content.cityField || 'city',
+                phone: this.content.phoneField || 'phone',
+                country: this.content.countryField || 'country',
+                ownershipType: this.content.ownershipTypeField || 'ownershipType',
+                facilityType: this.content.facilityTypeField || 'facilityType',
+                nonFacility: rawData.nonFacility || false,
             };
 
-            // Check if non-facility is selected
-            const nonFacilityText = fields.nonFacility
-                ? '<p><strong>Type:</strong> Non-Facility</p>'
-                : '';
+            // Start constructing the InfoWindow content
+            let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
 
-            return `
-                <div class="info-window-content">
-                    <h3>${rawData[fields.name] || 'Unknown'}</h3>
-                    <p><strong>City:</strong> ${rawData[fields.city] || 'N/A'}</p>
-                    <p><strong>Phone:</strong> ${rawData[fields.phone] || 'N/A'}</p>
-                    <p><strong>Country:</strong> ${rawData[fields.country] || 'N/A'}</p>
-                    ${nonFacilityText}
-                </div>
-            `;
+            // Add fields if they exist in rawData
+            if (rawData[fields.city]) {
+                content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
+            }
+            if (rawData[fields.phone]) {
+                content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
+            }
+            if (rawData[fields.country]) {
+                content += `<p><strong>Country:</strong> ${rawData[fields.country]}</p>`;
+            }
+            if (rawData[fields.ownershipType]) {
+                content += `<p><strong>Ownership Type:</strong> ${rawData[fields.ownershipType]}</p>`;
+            }
+            if (rawData[fields.facilityType]) {
+                content += `<p><strong>Facility Type:</strong> ${rawData[fields.facilityType]}</p>`;
+            }
+
+            // Check for non-facility status
+            if (fields.nonFacility) {
+                content += '<p><strong>Type:</strong> Non-Facility</p>';
+            }
+
+            content += '</div>'; // Close the info window content div
+            return content;
         },
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {

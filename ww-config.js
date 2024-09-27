@@ -39,7 +39,10 @@ export default {
                 'countryField',     // Added for Country field
                 'ownershipTypeField', // Added for Ownership Type field
                 'facilityTypeField', // Added for Facility Type field
-                'latLngField',      // Added for LatLng field
+                'latitudeField',      // Added for Latitude field
+                'longitudeField',     // Added for Longitude field
+                'phoneNumberField',   // Added for Phone Number field
+                'addressField',       // Added for Address field
                         
             ],
             [
@@ -633,11 +636,11 @@ export default {
             section: 'settings',
         },
         
-        latLngField: {
+        latitudeField: {
             hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
             label: {
-                en: 'LatLng field',
-                fr: 'Champ LatLng',
+                en: 'Latitude field',
+                fr: 'Champ de la latitude',
             },
             type: 'ObjectPropertyPath',
             options: content => {
@@ -650,6 +653,56 @@ export default {
             section: 'settings',
         },
         
+        longitudeField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Longitude field',
+                fr: 'Champ de la longitude',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        phoneNumberField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Phone Number field',
+                fr: 'Champ du numéro de téléphone',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        addressField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Address field',
+                fr: 'Champ de l\'adresse',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
         
         zoomControl: {
             label: { en: 'Zoom control', fr: 'Zoom control' },
