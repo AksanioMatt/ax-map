@@ -240,22 +240,35 @@ export default {
                 this.setMapMarkerBounds();
             }
         },
+        getFieldName(field) {
+    if (typeof field === 'string' && (field.includes('[') || field.includes(']'))) {
+        // Remove brackets and quotes
+        field = field.replace(/[\[\]']/g, '');
+        // If it's formatted with commas, extract the first element
+        if (field.includes(',')) {
+            return field.split(',')[0].trim(); // Get the first element as a string
+        }
+        return String(field); // Return as string if not an array
+    }
+    return null; // Return null if no brackets are found or not a string
+},
         createInfoWindowContent(rawData) {
     if (!this.content.infoWindowEnabled) {
         return ''; // Return empty string if InfoWindow is not enabled
     }
-    
+  
+
 
     const fields = {
-        name: Array.isArray(this.content.nameField) ? String(this.content.nameField[0]) : null,
-        city: Array.isArray(this.content.cityField) ? String(this.content.cityField[0]) : null,
-        phone: Array.isArray(this.content.phoneField) ? String(this.content.phoneField[0]) : null,
-        country: Array.isArray(this.content.countryField) ? String(this.content.countryField[0]) : null,
-        ownershipType: Array.isArray(this.content.ownershipTypeField) ? String(this.content.ownershipTypeField[0]) : null,
-        facilityType: Array.isArray(this.content.facilityTypeField) ? String(this.content.facilityTypeField[0]) : null,
+        name: this.getFieldName(this.content.nameField),
+        city: this.getFieldName(this.content.cityField),
+        phone: this.getFieldName(this.content.phoneField),
+        country: this.getFieldName(this.content.countryField),
+        ownershipType: this.getFieldName(this.content.ownershipTypeField),
+        facilityType: this.getFieldName(this.content.facilityTypeField),
     };
     console.log(fields,"heyyyyyyyyyyhoolelo")
-    console.log('Fields with Array Handling:', Array.isArray(this.content.cityField), "ss", String(this.content.cityField[0]), this.content.cityField[0]);
+    console.log('Fields with Array Handling:', Array.isArray(this.content.cityField), "ss", String(this.content.cityField[0]), this.content.cityField);
 
     +
 console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyyyyyyyhoo")
