@@ -35,6 +35,12 @@ export default {
                 'fixedBounds',
                 'infoWindowEnabled', // Added for InfoWindow settings
                 'infoWindowFields',   // Added for InfoWindow fields
+                'cityField',        // Added for City field
+                'countryField',     // Added for Country field
+                'ownershipTypeField', // Added for Ownership Type field
+                'facilityTypeField', // Added for Facility Type field
+                'latLngField',      // Added for LatLng field
+                        
             ],
             [
                 'zoomControl',
