@@ -240,6 +240,7 @@ export default {
             }
         },
         createInfoWindowContent(rawData) {
+            console.log("Saaalekuuuuuu", rawData)
             if (!this.content.infoWindowEnabled) {
                 return ''; // Return empty string if InfoWindow is not enabled
             }
