@@ -559,6 +559,90 @@ export default {
                 tooltip: 'A collection of InfoWindow field data in array format: \n\n [{}, {}, ...]',
             },
         },
+        cityField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'City field',
+                fr: 'Champ de la ville',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        countryField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Country field',
+                fr: 'Champ du pays',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        ownershipTypeField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Ownership Type field',
+                fr: 'Champ du type de propriété',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        facilityTypeField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'Facility Type field',
+                fr: 'Champ du type d\'établissement',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
+        
+        latLngField: {
+            hidden: (content, sidepanelContent, boundProps) => !boundProps.infoWindowFields || !content.infoWindowFields,
+            label: {
+                en: 'LatLng field',
+                fr: 'Champ LatLng',
+            },
+            type: 'ObjectPropertyPath',
+            options: content => {
+                if (!content.infoWindowFields.length || typeof content.infoWindowFields[0] !== 'object') {
+                    return null;
+                }
+                return { object: content.infoWindowFields[0] };
+            },
+            defaultValue: null,
+            section: 'settings',
+        },
         
         
         zoomControl: {
