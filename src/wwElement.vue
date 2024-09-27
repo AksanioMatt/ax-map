@@ -61,14 +61,14 @@ export default {
         mapOptions() {
             return {
                 center: {
-                    lat: parseFloat(this.content.lat) || 0,
-                    lng: parseFloat(this.content.lng) || 0,
+                    lat: parseFloat(this.content.lat || 0),
+                    lng: parseFloat(this.content.lng || 0),
                 },
-                zoom: this.content.zoom || 8,
+                zoom: this.content.zoom,
                 styles: this.content.mapStyle === 'custom'
-                    ? JSON.parse(this.content.mapStyleJSON.code || '{}')
+                    ? JSON.parse(this.content.mapStyleJSON.code)
                     : stylesConfig[this.content.mapStyle],
-                mapTypeId: this.content.defaultMapType || 'roadmap',
+                mapTypeId: this.content.defaultMapType,
                 zoomControl: this.content.zoomControl,
                 scaleControl: this.content.scaleControl,
                 rotateControl: this.content.rotateControl,
@@ -80,8 +80,8 @@ export default {
         markers() {
             const fields = {
                 name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
-                lat: this.content.latitudeField || this.content.latField || DEFAULT_MARKER_FIELDS.lat,
-                lng: this.content.longitudeField || this.content.lngField || DEFAULT_MARKER_FIELDS.lng,
+                lat: this.content.latField || DEFAULT_MARKER_FIELDS.lat,
+                lng: this.content.lngField || DEFAULT_MARKER_FIELDS.lng,
                 url: this.content.urlField || DEFAULT_MARKER_FIELDS.url,
                 width: this.content.widthField || DEFAULT_MARKER_FIELDS.width,
                 height: this.content.heightField || DEFAULT_MARKER_FIELDS.height,
@@ -90,37 +90,26 @@ export default {
                 ownershipType: this.content.ownershipTypeField || 'ownershipType',
                 facilityType: this.content.facilityTypeField || 'facilityType',
                 phone: this.content.phoneNumberField || 'phone',
-                address: this.content.addressField || 'address',
                 infoWindowEnabled: this.content.infoWindowEnabled || false,
             };
-
             if (!Array.isArray(this.content.markers)) return [];
-
-            return this.content.markers.map(marker => {
-                const lat = parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lat) || 0);
-                const lng = parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lng) || 0);
-
-                if (isNaN(lat) || isNaN(lng)) {
-                    console.warn('Invalid marker position:', { lat, lng });
-                    return null; // Skip invalid markers
-                }
-
-                return {
-                    content: wwLib.resolveObjectPropertyPath(marker, fields.name),
-                    position: { lat, lng },
-                    rawData: marker,
-                    url: wwLib.resolveObjectPropertyPath(marker, fields.url),
-                    width: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.width) || 0),
-                    height: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.height) || 0),
-                    city: wwLib.resolveObjectPropertyPath(marker, fields.city),
-                    country: wwLib.resolveObjectPropertyPath(marker, fields.country),
-                    ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
-                    facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
-                    phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
-                    address: wwLib.resolveObjectPropertyPath(marker, fields.address),
-                    infoWindowEnabled: fields.infoWindowEnabled,
-                };
-            }).filter(marker => marker !== null); // Filter out null markers
+            return this.content.markers.map(marker => ({
+                content: wwLib.resolveObjectPropertyPath(marker, fields.name),
+                position: {
+                    lat: parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lat) || 0),
+                    lng: parseFloat(wwLib.resolveObjectPropertyPath(marker, fields.lng) || 0),
+                },
+                rawData: marker,
+                url: wwLib.resolveObjectPropertyPath(marker, fields.url),
+                width: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.width) || 0),
+                height: parseInt(wwLib.resolveObjectPropertyPath(marker, fields.height) || 0),
+                city: wwLib.resolveObjectPropertyPath(marker, fields.city),
+                country: wwLib.resolveObjectPropertyPath(marker, fields.country),
+                ownershipType: wwLib.resolveObjectPropertyPath(marker, fields.ownershipType),
+                facilityType: wwLib.resolveObjectPropertyPath(marker, fields.facilityType),
+                phone: wwLib.resolveObjectPropertyPath(marker, fields.phone),
+                infoWindowEnabled: fields.infoWindowEnabled,
+            }));
         },
     },
     watch: {
@@ -128,7 +117,7 @@ export default {
         'content.markers': 'reloadMap', // Reload map on markers change
         'content.zoom'(value) {
             if (this.map) {
-                this.map.setZoom(value || 8);
+                this.map.setZoom(value || 0);
             }
         },
         'content.defaultMapType'(value) {
@@ -165,7 +154,6 @@ export default {
             }
             this.wrongKey = false;
             if (!googleKey.length) return;
-
             if (!this.loader) {
                 this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
                 await this.loader.load();
@@ -184,7 +172,7 @@ export default {
 
             const markersArray = this.markers.map(marker => {
                 const icon = {
-                    url: marker.url || this.content.defaultMarkerUrl || '',
+                    url: marker.url || this.content.defaultMarkerUrl,
                     scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
                 };
 
@@ -196,8 +184,12 @@ export default {
                 });
 
                 this.markerInstances.push(_marker);
+                
+                // Create the InfoWindow content based on infoWindowFields
+                const infoContent = this.createInfoWindowContent(marker.rawData);
 
                 const infowindow = new google.maps.InfoWindow({
+                    content: infoContent,
                     maxWidth: 200,
                 });
 
@@ -207,7 +199,6 @@ export default {
                         event: { marker, domEvent: e.domEvent },
                     });
                     if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                        infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                         infowindow.open(this.map, _marker);
                     }
                 });
@@ -233,7 +224,7 @@ export default {
 
                 this.setupMarkerEvents(_marker, marker);
                 return _marker;
-            }).filter(marker => marker !== undefined); // Filter out undefined markers
+            });
 
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
@@ -286,6 +277,7 @@ export default {
             content += '</div>';
             return content;
         },
+
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {
                 this.$emit('trigger-event', {
@@ -311,9 +303,7 @@ export default {
             }
             const bounds = new google.maps.LatLngBounds();
             this.markers.forEach(marker => {
-                if (marker.position) {
-                    bounds.extend(marker.position);
-                }
+                bounds.extend(marker.position);
             });
             this.map.fitBounds(bounds);
         },
@@ -328,29 +318,24 @@ export default {
     height: 100%;
     overflow: hidden;
 }
-
 .map-container {
     position: absolute;
     width: 100%;
     height: 100%;
 }
-
 .map {
     width: 100%;
     height: 100%;
 }
-
 .map-placeholder {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
 }
-
 .error {
     color: red;
 }
-
 .wrongKey {
     color: orange;
 }
