@@ -46,6 +46,7 @@ export default {
             observer: null,
             clusterer: null,
             markerInstances: [],
+            currentInfoWindow: null, // Track the currently open InfoWindow
         };
     },
     computed: {
@@ -78,7 +79,7 @@ export default {
             };
         },
         markers() {
-            console.log(this.content.nameField, this.content.cityField, "finalCheck")
+            console.log(this.content.nameField, this.content.cityField, "finalCheck");
             const fields = {
                 name: this.content.nameField || DEFAULT_MARKER_FIELDS.name,
                 lat: this.content.latField || DEFAULT_MARKER_FIELDS.lat,
@@ -195,33 +196,20 @@ export default {
                     maxWidth: 200,
                 });
 
-                _marker.addListener('mouseover', e => {
-                    this.$emit('trigger-event', {
-                        name: 'marker:mouseover',
-                        event: { marker, domEvent: e.domEvent },
-                    });
-                    if (this.content.markerTooltipTrigger === 'hover' && marker.content) {
-                        infowindow.open(this.map, _marker);
-                    }
-                });
-
-                _marker.addListener('mouseout', e => {
-                    this.$emit('trigger-event', {
-                        name: 'marker:mouseout',
-                        event: { marker, domEvent: e.domEvent },
-                    });
-                    if (this.content.markerTooltipTrigger === 'hover') {
-                        infowindow.close();
-                    }
-                });
-
                 _marker.addListener('click', e => {
                     this.$emit('trigger-event', {
                         name: 'marker:click',
                         event: { marker, domEvent: e.domEvent },
                     });
+                    
+                    // Close any open InfoWindow before opening a new one
+                    if (this.currentInfoWindow) {
+                        this.currentInfoWindow.close();
+                    }
+
                     infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                     infowindow.open(this.map, _marker);
+                    this.currentInfoWindow = infowindow; // Track the open InfoWindow
                 });
 
                 this.setupMarkerEvents(_marker, marker);
@@ -252,12 +240,10 @@ export default {
             return null;
         },
         createInfoWindowContent(rawData) {
-            console.log(rawData)
+            console.log(rawData);
             if (!this.content.infoWindowEnabled) {
-                return '';
+                return `<div class="info-window-content"><h3>${rawData['name']}</h3></div>`;
             }
-
-
 
             const fields = {
                 city: this.getFieldName(this.content.cityField),
@@ -267,7 +253,6 @@ export default {
                 facilityType: this.getFieldName(this.content.facilityTypeField),
                 address: this.getFieldName(this.content.addressField),
             };
-
 
             let content = `<div class="info-window-content"><h3>${rawData['name'] || 'Unknown'}</h3>`;
             if (fields.phone && rawData[fields.phone]) {
@@ -293,7 +278,6 @@ export default {
             return content;
         },
 
-
         setupMarkerEvents(marker, markerData) {
             marker.addListener('click', () => {
                 this.$emit('trigger-event', {
@@ -303,6 +287,12 @@ export default {
             });
         },
         clearOldMarkers() {
+            // Close the current InfoWindow if it exists
+            if (this.currentInfoWindow) {
+                this.currentInfoWindow.close();
+                this.currentInfoWindow = null; // Reset it
+            }
+
             // Remove old markers from the map
             this.markerInstances.forEach(marker => marker.setMap(null));
             this.markerInstances = [];

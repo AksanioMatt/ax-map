@@ -38,9 +38,7 @@ export default {
                 'cityField',      
                 'countryField',     
                 'ownershipTypeField', 
-                'facilityTypeField', 
-                'latitudeField',      
-                'longitudeField',     
+                'facilityTypeField',     
                 'phoneNumberField',   
                 'addressField',      
                         
