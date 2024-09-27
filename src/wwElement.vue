@@ -218,6 +218,7 @@ export default {
                         name: 'marker:click',
                         event: { marker, domEvent: e.domEvent },
                     });
+                    console.log("why is the sheeed on",this.createInfoWindowContent(marker.rawData))
                     infowindow.setContent(this.createInfoWindowContent(marker.rawData));
                     infowindow.open(this.map, _marker);
                 });
@@ -252,11 +253,14 @@ export default {
         ownershipType: Array.isArray(this.content.ownershipTypeField) ? this.content.ownershipTypeField[0] : null,
         facilityType: Array.isArray(this.content.facilityTypeField) ? this.content.facilityTypeField[0] : null,
     };
-
+console.log(rawData[fields.name],rawData['name'], rawData[fields.phone],"heyyyyyyyyyyhoo")
     // Start constructing the InfoWindow content
     let content = `<div class="info-window-content"><h3>${rawData[fields.name] || 'Unknown'}</h3>`;
 
     // Check for each field and add it to content if it exists in rawData
+   
+        content += `<p><strong>Name:</strong> ${rawData['name']}</p>`;
+    
     if (fields.city && rawData[fields.city]) {
         content += `<p><strong>City:</strong> ${rawData[fields.city]}</p>`;
     }
@@ -275,6 +279,7 @@ export default {
 
     // Close the info window content div
     content += '</div>';
+   console.log(content,"contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent") 
     return content;
 },
 
