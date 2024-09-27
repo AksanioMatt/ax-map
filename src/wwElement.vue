@@ -137,10 +137,12 @@ export default {
             }
             this.wrongKey = false;
             if (!googleKey.length) return;
+
             if (!this.loader) {
                 this.loader = new Loader({ apiKey: googleKey, language: wwLib.wwLang.lang });
                 await this.loader.load();
             }
+
             try {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
                 this.updateMapMarkers(); // Ensure markers are updated on map initialization
@@ -158,7 +160,7 @@ export default {
                     scaledSize: new google.maps.Size(marker.width || 32, marker.height || 32),
                 };
 
-                const _marker = new google.maps.marker.AdvancedMarkerElement({
+                const _marker = new google.maps.Marker({
                     position: marker.position,
                     map: this.map,
                     icon: icon,
@@ -173,11 +175,8 @@ export default {
             if (this.clusterer) {
                 this.clusterer.clearMarkers();
             }
-            this.clusterer = new MarkerClusterer({
-                map: this.map,
-                markers: markersArray,
-                options: { minimumClusterSize: 2 },
-            });
+
+            this.clusterer = new MarkerClusterer(this.map, markersArray, { minimumClusterSize: 2 });
 
             if (this.content.fixedBounds) {
                 this.setMapMarkerBounds();
