@@ -1,9 +1,9 @@
 {
-    "name": "ww-map",
+    "name": "ax-map",
     "repository": {
         "url": "https://github.com/weweb-assets/ww-map"
     },
-    "version": "3.3.3",
+    "version": "0.0.2",
     "license": "MIT",
     "scripts": {
         "build": "weweb build",
