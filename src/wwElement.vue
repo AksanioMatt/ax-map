@@ -224,12 +224,12 @@ export default {
 
                 // Tooltip mouseover and mouseout events
                 _marker.addListener('mouseover', (e) => {
-                    this.tooltipContent = marker.rawData['name']; // Use marker's name
+                    this.tooltipContent = marker.rawData['Name']; // Use marker's name ...M... - uppercase
                     const projection = this.map.getProjection();
                     const position = projection.fromLatLngToPoint(marker.position);
                     this.tooltipX = position.x + 10; // Adjust for better positioning
                     this.tooltipY = position.y - 20; // Adjust for better positioning
-                    this.tooltipVisible = true;
+                    this.tooltipVisible = false;  //  ...M... - toFalse to remove dot error
                 });
 
                 _marker.addListener('mouseout', () => {
