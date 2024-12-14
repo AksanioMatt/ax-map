@@ -265,7 +265,7 @@ export default {
         },
         createInfoWindowContent(rawData) {
             if (!this.content.infoWindowEnabled) {
-                return `<div class="info-window-content"><h3>${rawData['name']}</h3></div>`;
+                return `<div class="info-window-content"><h3>${rawData['Name']}</h3></div>`;//...M...updated to uppercase
             }
 
             const fields = {
@@ -277,7 +277,7 @@ export default {
                 address: this.getFieldName(this.content.addressField),
             };
 
-            let content = `<div class="info-window-content"><h3>${rawData['name'] || 'Unknown'}</h3>`;
+            let content = `<div class="info-window-content"><h3>${rawData['Name'] || 'Unknown'}</h3>`;//...M...updated to uppercase
             if (fields.phone && rawData[fields.phone]) {
                 content += `<p><strong>Phone:</strong> ${rawData[fields.phone]}</p>`;
             }
@@ -309,6 +309,17 @@ export default {
                 });
             });
         },
+
+        //...M...Added this to get access outside of component to change in map view
+        map.addListener("bounds_changed", () => {
+            const boundsData = this.map.getBounds();
+            boundsData = {"NorthEast":boundsData.getNorthEast(),"SouthWest":boundsData.getSouthWest()};
+            // emit values from bounds changing
+            this.$emit('trigger-event', {
+                    name: 'bounds:change',
+                    event: { map: boundsData },
+        });
+    
         clearOldMarkers() {
             // Close the current InfoWindow if it exists
             if (this.currentInfoWindow) {
