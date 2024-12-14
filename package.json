@@ -3,7 +3,7 @@
     "repository": {
         "url": "https://github.com/weweb-assets/ww-map"
     },
-    "version": "0.0.3",
+    "version": "0.0.4",
     "license": "MIT",
     "scripts": {
         "build": "weweb build",

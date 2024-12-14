@@ -122,6 +122,18 @@ export default {
             },
             getTestEvent: 'getMarkerTestEvent',
         },
+        {
+            name: 'bounds:change',
+            label: { en: 'On map bounds change' },
+            event: {
+                map: {
+                    NorthEast: {},
+                    SouthWest: {},
+                },
+                domEvent: { x: 128, y: 156, target: null },
+            },
+            getTestEvent: 'getMarkerTestEvent',
+        },
     ],
     properties: {
         defaultMapType: {
