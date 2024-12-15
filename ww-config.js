@@ -126,11 +126,11 @@ export default {
             name: 'bounds:change',
             label: { en: 'On map bounds change' },
             event: {
-                map: {
+                position: {
                     NorthEast: {},
                     SouthWest: {},
                 },
-                domEvent: { x: 128, y: 156, target: null },
+                domEvent: {},
             },
             getTestEvent: 'getMarkerTestEvent',
         },
