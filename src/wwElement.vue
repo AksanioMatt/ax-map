@@ -172,6 +172,7 @@ export default {
                 this.map = new google.maps.Map(this.$refs.map, { ...this.mapOptions });
                 console.log('Map initialized:', this.map);
                 this.updateMapMarkers();
+                this.boundaryChanging(); //...M... call new method
             } catch (error) {
                 console.error('Error initializing map:', error);
             }
@@ -311,15 +312,18 @@ export default {
         },
 
         //...M...Added this to get access outside of component to change in map view
-        map.addListener("bounds_changed", () => {
+        boundaryChanging() {
+            this.map.addListener("bounds_changed", () => {
             const boundsData = this.map.getBounds();
             boundsData = {"NorthEast":boundsData.getNorthEast(),"SouthWest":boundsData.getSouthWest()};
             // emit values from bounds changing
             this.$emit('trigger-event', {
                     name: 'bounds:change',
-                    event: { map: boundsData },
-        });
-    
+                    event: { position: boundsData },
+            });
+            };
+        },
+        
         clearOldMarkers() {
             // Close the current InfoWindow if it exists
             if (this.currentInfoWindow) {
