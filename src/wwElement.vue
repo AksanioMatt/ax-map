@@ -39,6 +39,7 @@ export default {
     wwEditorState: { type: Object, required: true },
     content: { type: Object, required: true },
     wwElementState: { type: Object, required: true },
+    centeringObject: { type: Object, required: true }, //...M... watcher setup for moving center
   },
   emits: ['trigger-event', 'update:content:effect'],
   data() {
@@ -54,6 +55,7 @@ export default {
       tooltipContent: '',
       tooltipX: 0,
       tooltipY: 0,
+      //centeringObject: null, //...M...
     };
   },
   computed: {
@@ -73,6 +75,7 @@ export default {
           lng: parseFloat(this.content.lng || 0),
         },
         zoom: this.content.zoom,
+        maxZoom: 18,
         styles: this.content.mapStyle === 'custom'
             ? JSON.parse(this.content.mapStyleJSON.code)
             : stylesConfig[this.content.mapStyle],
@@ -135,6 +138,12 @@ export default {
     },
     'content.fixedBounds'(value) {
       value ? this.setMapMarkerBounds() : this.initMap();
+    },
+    //...M... update map center
+    'content.centeringObject'(value) {
+        if (value) {
+          this.setMapCenter(value);
+        }
     },
   },
   mounted() {
@@ -325,14 +334,16 @@ export default {
         });
       });
     },
+    //...M... added for when user changes zoom instead of dragging/pan. The zoom_changed verbiage is from google something to watch for
     zoomChanging() {
       this.map.addListener("zoom_changed", () => {
+        this.map.getZoom() > 17 && this.map.setZoom(17);
         let boundsData = this.map.getBounds();
         boundsData = {"NorthEast":boundsData.getNorthEast(),"SouthWest":boundsData.getSouthWest()};
         // emit values from zoom changing
         this.$emit('trigger-event', {
           name: 'zoom:change',
-          event: { position: boundsData, zoom:this.map.getZoom() },
+          event: { position: boundsData, updatedzoom:this.map.getZoom() },
         });
       });
     },
@@ -346,6 +357,15 @@ export default {
           event: { position: mouseUpBoundsData },
         });
       });
+    },
+    //...M... method for center point change
+    setMapCenter(latLng) {
+      if (this.map && latLng.lat && latLng.lng) {
+        this.map.setCenter(latLng); // Set the map to the new center
+        //this.initMap();
+      } else {
+        console.warn('Invalid latLng provided: ', latLng);
+      }
     },
 
     clearOldMarkers() {
@@ -374,7 +394,6 @@ export default {
         bounds.extend(marker.position);
       });
       this.map.fitBounds(bounds);
-      this.map.getZoom() > 17 && this.map.setZoom(17); //...M... added to not be too zoomed in
     },
   },
 };
