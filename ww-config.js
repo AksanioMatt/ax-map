@@ -251,7 +251,7 @@ export default {
       options: {
         placeholder: 'Google API key',
       },
-      defaultValue: 'AIzaSyBOA6x1qHryXCOarHFmKEyh02vjYaRrSa8',
+      defaultValue: '',
       bindable: true,
       bindingValidation: {
         type: 'string',
