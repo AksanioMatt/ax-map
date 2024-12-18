@@ -21,7 +21,7 @@ export default {
     ],
     customSettingsPropertiesOrder: [
       'googleKey',
-      ['lat', 'lng', 'zoom'],
+      ['lat', 'lng', 'zoom', 'centeringObject'],
       [
         'markers',
         'hintFields',
@@ -151,7 +151,7 @@ export default {
           NorthEast: {},
           SouthWest: {},
         },
-        zoom: {},
+        updatedzoom: {},
       },
     },
   ],
@@ -190,7 +190,7 @@ export default {
           { value: 'custom', label: 'Custom Import' },
         ],
       },
-      defaultValue: 'dark',
+      //defaultValue: 'dark', ...M... Make standard style the default
     },
     markersIcon: {
       label: 'Custom markers',
@@ -251,7 +251,7 @@ export default {
       options: {
         placeholder: 'Google API key',
       },
-      defaultValue: '',
+      defaultValue: 'AIzaSyBOA6x1qHryXCOarHFmKEyh02vjYaRrSa8',
       bindable: true,
       bindingValidation: {
         type: 'string',
@@ -292,7 +292,7 @@ export default {
       label: { en: 'Zoom', fr: 'Zoom' },
       options: {
         min: 0,
-        max: 20,
+        max: 22,
         step: 1,
       },
       defaultValue: 11,
@@ -301,6 +301,13 @@ export default {
         type: 'number',
         tooltip: 'A number that defines the zoom: `11`',
       },
+    },
+    centeringObject: {
+      section: 'settings',
+      type: 'ObjectPropertyPath',
+      label: { en: 'Centering Updates', fr: 'Centre Mise à jour' },
+      defaultValue: null,
+      bindable: true,
     },
     markers: {
       section: 'settings',
