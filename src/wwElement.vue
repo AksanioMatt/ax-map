@@ -24,6 +24,7 @@
 import { Loader } from './googleLoader';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import stylesConfig from './stylesConfig.json';
+import { nextTick } from 'vue';
 
 const DEFAULT_MARKER_FIELDS = {
   name: 'name',
@@ -147,7 +148,22 @@ export default {
     },
   },
   mounted() {
-    this.initMap();
+    //...M... added to try and succeed in rendering the map when deployed
+    nextTick(() => {
+      if (!this.$refs.map) {
+        console.error('[Map] Map container (this.$refs.map) not found.');
+        return;
+      }
+
+      try {
+        // Initialize the Google Map
+        this.initMap();
+        console.log('[Map] Map successfully initialized.');
+      } catch (error) {
+        console.error('Error initializing map:', error);
+      }
+    });
+    //this.initMap();
     this.observer = new IntersectionObserver(changes => {
       if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
         this.setMapMarkerBounds();
