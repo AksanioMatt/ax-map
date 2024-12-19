@@ -142,13 +142,14 @@ export default {
     },
     //...M... update map center
     'content.centeringObject'(value) {
-        if (value) {
-          this.setMapCenter(value);
-        }
-    },
+      if (value) {
+        this.setMapCenter(value);
+      }
+    }
   },
   mounted() {
     //...M... added to try and succeed in rendering the map when deployed
+    console.log("Mounted hook. $refs:", this.$refs);
     nextTick(() => {
       if (!this.$refs.map) {
         console.error('[Map] Map container (this.$refs.map) not found.');
@@ -159,17 +160,23 @@ export default {
         // Initialize the Google Map
         this.initMap();
         console.log('[Map] Map successfully initialized.');
+
+        //Copy in other mounted code to try and wait for it
+        this.observer = new IntersectionObserver(changes => {
+          if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
+            this.setMapMarkerBounds();
+          }
+        }, { trackVisibility: true, delay: 100 });
+        this.observer.observe(this.$refs.map);
+
+
+
       } catch (error) {
         console.error('Error initializing map:', error);
       }
     });
     //this.initMap();
-    this.observer = new IntersectionObserver(changes => {
-      if (changes.some(change => change.isIntersecting) && this.content.fixedBounds) {
-        this.setMapMarkerBounds();
-      }
-    }, { trackVisibility: true, delay: 100 });
-    this.observer.observe(this.$refs.map);
+
   },
   beforeUnmount() {
     this.observer.disconnect();
